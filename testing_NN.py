@@ -75,3 +75,7 @@ class Evaluate:
         val_loss, val_rmse, val_mae = trained_model.evaluate(compiled_model.x_test,
                                                    compiled_model.y_test)
         return [val_loss, val_rmse, val_mae]
+
+if __name__ == "__main__":
+
+    #
