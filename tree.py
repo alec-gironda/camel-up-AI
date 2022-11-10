@@ -1,4 +1,5 @@
 from collections import deque
+import copy
 
 class GameStateNode:
 
@@ -18,11 +19,22 @@ class GameStateNode:
 
     def expand(self):
 
+        children = []
+
         #bet
+
+        #need to make sure to remove the key once all bets used
+        for possible_bet in self.bets_left:
+            new_bets_left = self.bets_left[possible_bet].pop()
+            new_bets_made = self.bets_made.copy()
+            new_bets_made = self.bets_made[]
+
+
+
 
 
         #roll
-        
+
 
 
         return children
