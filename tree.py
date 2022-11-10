@@ -7,11 +7,9 @@ class GameStateNode:
     Parameters
     ----------
     board_state : dict of [square: (tuple of len(25) with 5 slots for each camel (for placement purposes))]
-        Training ECG data
     dice_left : set
         A set of the remaining dice inside of the pyramid
     bets_left : dict of [camel #: (payout 1, payout 2, payout 3)]
-        Testing ECG data
     bets_made : dict
         dict of bets made by the current player (s?)
     camel_spots : dict of [camel # : (current square, camel positioning on square)]
@@ -50,19 +48,23 @@ class GameStateNode:
 
     def expand(self):
 
-        children = []
-
         #bet
 
         #need to make sure to remove the key once all bets used
+
+        children_bets = []
+
         for possible_bet in self.bets_left:
-            new_bets_left = self.bets_left[possible_bet].pop()
+            new_bets_left = self.bets_left.copy()
+            bet_payout = new_bets_left[possible_bet].pop()
+            #this could cause issues... but basically you can't bet on the same camel twice right?
+            #at this point though, the agent would only be taking the 5 coin bets
+            del new_bets_left[possible_bet]
             new_bets_made = self.bets_made.copy()
-            new_bets_made = self.bets_made[]
+            new_bets_made[possible_bet] = bet_payout
 
-
-
-
+            child = GameStateNode(self.board_state,self.dice_left,new_bets_left,new_bets_made,self.camel_spots,self.money)
+            children.append(child)
 
         #roll
         for die in self.dice_left:
@@ -81,7 +83,7 @@ if __name__ == "__main__":
 
     #likely don't need board state anymore, either
     #board_state = {i+1:tuple(0 for i in range(25)) for i in range(17)}
-    bets_left = {1:(5,3,2),2:(5,3,2),3:(5,3,2),4:(5,3,2),5:(5,3,2)}
+    bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
     bets_made = {}
     dice_left = set([1,2,3,4,5])
     camel_spots = {1:(1,0),2:(1,1),3:(1,2),4:(2,0),5:(2,1)} #arbitrarily selecting starting locations for our camels
