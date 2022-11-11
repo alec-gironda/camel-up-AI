@@ -23,6 +23,7 @@ class GameStateNode:
         A unique game state of camel up
 
     """
+
     def __init__(self,board_state,dice_left,bets_left,bets_made,camel_spots,money):
         #can likely get rid of the board state, no?
         self.board_state = board_state
@@ -97,11 +98,23 @@ class GameStateNode:
                         new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
                         new_board_state[new_camel_spots[camel][0]].append(camel)
 
+                #print(f"new board state: {new_board_state}, die: {die}, ")
+
+
+
                 child = GameStateNode(new_board_state,new_dice_left,self.bets_left,self.bets_made,new_camel_spots,new_money)
                 children.append(child)
 
-
+        #print(f"length of children: {len(children)}")
         return children
+
+    def __hash__(self):
+        return hash((frozenset(self.board_state),frozenset(self.dice_left),frozenset(self.bets_left),frozenset(self.bets_made),frozenset(self.camel_spots),self.money))
+
+    #overriding == operator
+    def __eq__(self, other):
+        return isinstance(other, GameStateNode) and self.board_state == other.board_state and self.dice_left == other.dice_left and self.bets_left == other.bets_left and self.bets_made ==other.bets_made and self.camel_spots == other.camel_spots and self.money == other.money
+
 
 def BFS(root):
 
@@ -109,8 +122,11 @@ def BFS(root):
     q = deque([root])
     hashset = set()
     hashset.add(root)
-    
+
     while q:
+        print(f"q length: {len(q)}")
+        #print(f"unique q vals: {len(set(q))}")
+        #print(f"hashset: {len(hashset)}")
         x = q.popleft()
         hashset.add(x)
 
@@ -124,7 +140,11 @@ def BFS(root):
             children = x.expand()
             for child in children:
                 if child not in hashset:
+                    "This was the big change (144)"
+                    hashset.add(child) #makes the bfs eventually terminate
                     q.append(child)
+                # else:
+                    #print("SKIPPING")
     return max_money
 
 #class DiceRoller:
