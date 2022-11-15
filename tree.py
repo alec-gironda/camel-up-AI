@@ -155,6 +155,9 @@ class RandomPlayer:
 
     def __init__(self):
         self.money = 0
+        self.bets_made = []
+
+
 
     def make_move(self,gamestate : GameStateNode):
         #possible moves:
