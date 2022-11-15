@@ -3,6 +3,67 @@ import copy as cp
 import random
 
 class GameStateNode:
+
+    def __init__(self,board_state,dice_left,bets_left,camel_spots):
+        #can likely get rid of the board state, no?
+        self.board_state = board_state
+        self.dice_left = dice_left
+        self.bets_left = bets_left
+        self.camel_spots = camel_spots
+
+    def is_complete(self):
+        #more to figure out with this
+        for i in range(16,20):
+            if len(self.board_state[i])>0:
+                return True,i
+        return False,-1
+
+    def expand(self,bets_made = {}):
+
+        children = []
+
+        for possible_bet in self.bets_left:
+            if possible_bet not in bets_made:
+                new_bets_left = cp.deepcopy(self.bets_left)
+                payout = new_bets_left[possible_bet].pop()
+                if len(new_bets_left[possible_bet])==0:
+                    del new_bets_left[possible_bet]
+
+                child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots)
+                children.append((child,(possible_bet,payout)))
+
+
+        #roll
+
+        for die in self.dice_left:
+            new_dice_left = cp.deepcopy(self.dice_left)
+            new_dice_left.discard(die)
+            for die_roll in range(1,4): #possible outcomes on the die
+                new_camel_spots = cp.deepcopy(self.camel_spots)
+                new_board_state = cp.deepcopy(self.board_state)
+                #update the position of camel # die
+                for camel in self.board_state[self.camel_spots[die][0]]:
+                    if self.camel_spots[camel][1] >= self.camel_spots[die][1]:
+                        new_board_state[self.camel_spots[camel][0]].remove(camel)
+                        new_camel_spots[camel][0] += die_roll
+                        new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
+                        new_board_state[new_camel_spots[camel][0]].append(camel)
+
+
+                child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
+                children.append((child,"roll"))
+
+        return children
+
+    def __hash__(self):
+        return hash((frozenset(self.board_state),frozenset(self.dice_left),frozenset(self.bets_left),frozenset(self.camel_spots)))
+
+    #overriding == operator
+    def __eq__(self, other):
+        return isinstance(other, GameStateNode) and self.board_state == other.board_state and self.dice_left == other.dice_left and self.bets_left == other.bets_left and self.camel_spots == other.camel_spots
+
+
+class SinglePlayerGameStateNode(GameStateNode):
     """Create an instance of a game state for Camel up
 
     Parameters
@@ -26,61 +87,31 @@ class GameStateNode:
     """
 
     def __init__(self,board_state,dice_left,bets_left,bets_made,camel_spots,money):
-        #can likely get rid of the board state, no?
-        self.board_state = board_state
-        self.dice_left = dice_left
-        self.bets_left = bets_left
+        super().__init__(board_state,dice_left,bets_left,camel_spots)
         self.bets_made = bets_made
-        self.camel_spots = camel_spots
         self.money = money
-
-
-    def is_complete(self):
-        #more to figure out with this
-        for i in range(6,17):
-            if len(self.board_state[i])>0:
-                return True,i
-        return False,-1
-
-
-        #for now, loop through camels to check to see if any of them are beyond the square 16
-        # for key, val in self.camel_spots:
-        #     if val > 16:
-        #         return True
-        # return False
-        #
-        # if sum(self.board_state[17])>0:
-        #     return True
-        # return False
-
 
     def get_payout(self,indx):
         payout = 0
-        for camel in self.board_state[indx][::-1]:
-            if camel in self.bets_made:
-                payout = self.bets_made[camel]
+        bet = self.board_state[indx].pop()
+        if bet in self.bets_made:
+            payout = self.bets_made[bet]
         return payout
 
-    def expand(self):
+    def expand_single(self):
 
         children = []
 
-        #make sure there aren't issues with copy. might need to deep copy depending on references
-
         #bet
-
-        #need to make sure to remove the key once all bets used
 
         for possible_bet in self.bets_left:
             new_bets_left = cp.deepcopy(self.bets_left)
             bet_payout = new_bets_left[possible_bet].pop()
-            #this could cause issues... but basically you can't bet on the same camel twice right?
-            #at this point though, the agent would only be taking the 5 coin bets
             del new_bets_left[possible_bet]
             new_bets_made = cp.deepcopy(self.bets_made)
             new_bets_made[possible_bet] = bet_payout
 
-            child = GameStateNode(self.board_state,self.dice_left,new_bets_left,new_bets_made,self.camel_spots,self.money)
+            child = SinglePlayerGameStateNode(self.board_state,self.dice_left,new_bets_left,new_bets_made,self.camel_spots,self.money)
             children.append(child)
 
 
@@ -102,14 +133,10 @@ class GameStateNode:
                         new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
                         new_board_state[new_camel_spots[camel][0]].append(camel)
 
-                #print(f"new board state: {new_board_state}, die: {die}, ")
 
-
-
-                child = GameStateNode(new_board_state,new_dice_left,self.bets_left,self.bets_made,new_camel_spots,new_money)
+                child = SinglePlayerGameStateNode(new_board_state,new_dice_left,self.bets_left,self.bets_made,new_camel_spots,new_money)
                 children.append(child)
 
-        #print(f"length of children: {len(children)}")
         return children
 
     def __hash__(self):
@@ -119,8 +146,43 @@ class GameStateNode:
     def __eq__(self, other):
         return isinstance(other, GameStateNode) and self.board_state == other.board_state and self.dice_left == other.dice_left and self.bets_left == other.bets_left and self.bets_made ==other.bets_made and self.camel_spots == other.camel_spots and self.money == other.money
 
+class RandomPlayer:
 
-def BFS(root):
+    """
+    Random Player, takes in a state and returns one with a random move
+    """
+
+    def __init__(self):
+        self.money = 0
+        self.bets_made = {}
+
+    def get_payout(self,state,indx):
+        payout = 0
+        for camel in state.board_state[indx][::-1]:
+            if camel in self.bets_made:
+                payout = self.bets_made[camel]
+        return payout
+
+    def make_move(self,gamestate : GameStateNode):
+        #possible moves:
+        #0: roll dice
+        #1: bet on camel 1
+        #2: bet on camel 2
+        #3: bet on camel 3
+        #4: bet on camel 4
+        #5: bet on camel 5
+
+        children = gamestate.expand(self.bets_made)
+        move = random.randint(0,len(children)-1) #inclusive
+
+        if children[move][1] == "roll":
+            self.money +=1
+        else:
+            self.bets_made[children[move][1][0]] = children[move][1][1]
+
+        return children[move][0]
+
+def BFS(root): #should only be done in a single player game
 
     max_money = 0
     q = deque([root])
@@ -138,71 +200,52 @@ def BFS(root):
                 max_money = terminal_node_money
 
         else:
-            children = x.expand()
+            children = x.expand_single()
             for child in children:
                 if child not in hashset:
                     hashset.add(child) #makes the bfs eventually terminate
                     q.append(child)
     return max_money
 
+def SimulateRandomGame(state):
+    player1 = RandomPlayer()
+    player2 = RandomPlayer()
 
+    while True:
+        print(state)
+        complete = state.is_complete()
+        if not complete[0]:
+            state = player1.make_move(state)
+        else:
+            player1.money += player1.get_payout(state,complete[1])
+            return player1.money
 
-class RandomPlayer:
-
-    """
-    Random Player, takes in a state and returns one with a random move
-    """
-
-    def __init__(self):
-        self.money = 0
-        self.bets_made = []
-
-
-
-    def make_move(self,gamestate : GameStateNode):
-        #possible moves:
-        #0: roll dice
-        #1: bet on camel 1
-        #2: bet on camel 2
-        #3: bet on camel 3
-        #4: bet on camel 4
-        #5: bet on camel 5
-
-        move = random.randint(0,5) #inclusive
-
-        if move == 0:
-            return self.roll(gamestate)
-        else: #bet on camel
-            return self.bet(gamestate, move)
-
-    def bet(self, game_state, camel_number): #return updated GameStateNode
-
-
-    def roll(self, game_state): #return updated GameStateNode
-
-
-
+        complete = state.is_complete()
+        if not complete[0]:
+            state = player2.make_move(state)
+        else:
+            player2.money += player2.get_payout(state,complete[1])
+            return player2.money
 
 
 
 if __name__ == "__main__":
 
     #likely don't need board state anymore, either
-    board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[]}
+    board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
     bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
     bets_made = {}
     dice_left = set([1,2,3,4,5])
     camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
     money = 0
 
-    q = RandomPlayer()
 
+    # root = SinglePlayerGameStateNode(board_state,dice_left,bets_left,bets_made,camel_spots,money)
+    #
+    # print(BFS(root))
 
-    root = GameStateNode(board_state,dice_left,bets_left,bets_made,camel_spots,money)
-
-    q.make_move(root)
-
-    print(BFS(root))
+    root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    print(SimulateRandomGame(root))
 
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
