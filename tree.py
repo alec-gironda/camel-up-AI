@@ -36,9 +36,10 @@ class GameStateNode:
 
     def is_complete(self):
         #more to figure out with this
-        if len(self.board_state[3])>0:
-            return True
-        return False
+        for i in range(6,17):
+            if len(self.board_state[i])>0:
+                return True,i
+        return False,-1
 
 
         #for now, loop through camels to check to see if any of them are beyond the square 16
@@ -51,10 +52,12 @@ class GameStateNode:
         #     return True
         # return False
 
-    def get_payout(self):
+
+    def get_payout(self,indx):
         payout = 0
-        for bet in self.bets_made:
-            payout += self.bets_made[bet]
+        for camel in self.board_state[indx][::-1]:
+            if camel in self.bets_made:
+                payout = self.bets_made[camel]
         return payout
 
     def expand(self):
@@ -121,18 +124,19 @@ def BFS(root):
     max_money = 0
     q = deque([root])
     hashset = set()
-    hashset.add(root)
 
     while q:
-        print(f"q length: {len(q)}")
-        #print(f"unique q vals: {len(set(q))}")
+        # print(f"q length: {len(q)}")
+        # print(f"unique q vals: {len(set(q))}")
         #print(f"hashset: {len(hashset)}")
         x = q.popleft()
+        # print(x.board_state)
+        # print("\n")
         hashset.add(x)
 
-        if x.is_complete():
-            terminal_node_money = x.get_payout() + x.money
-            print(terminal_node_money)
+        complete = x.is_complete()
+        if complete[0]:
+            terminal_node_money = x.get_payout(complete[1]) + x.money
             if terminal_node_money > max_money:
                 max_money = terminal_node_money
 
@@ -140,7 +144,7 @@ def BFS(root):
             children = x.expand()
             for child in children:
                 if child not in hashset:
-                    "This was the big change (144)"
+                    #"This was the big change (144)"
                     hashset.add(child) #makes the bfs eventually terminate
                     q.append(child)
                 # else:
@@ -162,7 +166,7 @@ if __name__ == "__main__":
 
     root = GameStateNode(board_state,dice_left,bets_left,bets_made,camel_spots,money)
 
-    BFS(root)
+    print(BFS(root))
 
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
