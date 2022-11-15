@@ -1,5 +1,6 @@
 from collections import deque
 import copy as cp
+import random
 
 class GameStateNode:
     """Create an instance of a game state for Camel up
@@ -126,12 +127,8 @@ def BFS(root):
     hashset = set()
 
     while q:
-        # print(f"q length: {len(q)}")
-        # print(f"unique q vals: {len(set(q))}")
-        #print(f"hashset: {len(hashset)}")
+
         x = q.popleft()
-        # print(x.board_state)
-        # print("\n")
         hashset.add(x)
 
         complete = x.is_complete()
@@ -144,14 +141,45 @@ def BFS(root):
             children = x.expand()
             for child in children:
                 if child not in hashset:
-                    #"This was the big change (144)"
                     hashset.add(child) #makes the bfs eventually terminate
                     q.append(child)
-                # else:
-                    #print("SKIPPING")
     return max_money
 
-#class DiceRoller:
+
+
+class RandomPlayer:
+
+    """
+    Random Player, takes in a state and returns one with a random move
+    """
+
+    def __init__(self):
+        self.money = 0
+
+    def make_move(self,gamestate : GameStateNode):
+        #possible moves:
+        #0: roll dice
+        #1: bet on camel 1
+        #2: bet on camel 2
+        #3: bet on camel 3
+        #4: bet on camel 4
+        #5: bet on camel 5
+
+        move = random.randint(0,5) #inclusive
+
+        if move == 0:
+            return self.roll(gamestate)
+        else: #bet on camel
+            return self.bet(gamestate, move)
+
+    def bet(self, game_state, camel_number): #return updated GameStateNode
+
+
+    def roll(self, game_state): #return updated GameStateNode
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -164,7 +192,12 @@ if __name__ == "__main__":
     camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
     money = 0
 
+    q = RandomPlayer()
+
+
     root = GameStateNode(board_state,dice_left,bets_left,bets_made,camel_spots,money)
+
+    q.make_move(root)
 
     print(BFS(root))
 
