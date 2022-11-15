@@ -158,9 +158,11 @@ class RandomPlayer:
 
     def get_payout(self,state,indx):
         payout = 0
-        for camel in state.board_state[indx][::-1]:
-            if camel in self.bets_made:
-                payout = self.bets_made[camel]
+        tmp_state = cp.deepcopy(state)
+        camel = tmp_state.board_state[indx].pop()
+        if camel in self.bets_made:
+            payout = self.bets_made[camel]
+            del self.bets_made[camel]
         return payout
 
     def make_move(self,gamestate : GameStateNode):
@@ -172,8 +174,12 @@ class RandomPlayer:
         #4: bet on camel 4
         #5: bet on camel 5
 
+        move = 0
         children = gamestate.expand(self.bets_made)
-        move = random.randint(0,len(children)-1) #inclusive
+        if children:
+            move = random.randint(0,len(children)-1) #inclusive
+        else:
+            return None
 
         if children[move][1] == "roll":
             self.money +=1
@@ -212,19 +218,44 @@ def SimulateRandomGame(state):
     player2 = RandomPlayer()
 
     while True:
-        print(state)
         complete = state.is_complete()
         if not complete[0]:
+            tmp_state = cp.deepcopy(state)
             state = player1.make_move(state)
+            #reset leg
+            if not state:
+                #we can store this so we don't need to search
+                front_camel_indx = 0
+                for i in range(len(tmp_state.board_state)-1,-1,-1):
+                    if len(tmp_state.board_state[i])>0:
+                        front_camel_indx = i
+                        break
+                player1.money += player1.get_payout(tmp_state,front_camel_indx)
+                state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                state = player1.make_move(state)
         else:
             player1.money += player1.get_payout(state,complete[1])
+            print("player 1 wins")
             return player1.money
 
         complete = state.is_complete()
         if not complete[0]:
+            tmp_state = cp.deepcopy(state)
             state = player2.make_move(state)
+            #reset leg
+            if not state:
+                #we can store this so we don't need to search
+                front_camel_indx = 0
+                for i in range(len(tmp_state.board_state)-1,-1,-1):
+                    if len(tmp_state.board_state[i])>0:
+                        front_camel_indx = i
+                        break
+                player2.money += player2.get_payout(tmp_state,front_camel_indx)
+                state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                state = player2.make_move(state)
         else:
             player2.money += player2.get_payout(state,complete[1])
+            print("player 2 wins")
             return player2.money
 
 
