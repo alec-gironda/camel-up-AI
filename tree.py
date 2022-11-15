@@ -232,16 +232,20 @@ def SimulateRandomGame(state):
                         break
 
                 player1.money += player1.get_payout(tmp_state,front_camel_indx)
+                player2.money += player2.get_payout(tmp_state,front_camel_indx)
                 state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
                 state = player1.make_move(state)
         else:
             player1.money += player1.get_payout(state,complete[1])
+            player2.money += player2.get_payout(state,complete[1])
             if player1.money > player2.money:
                 print("player 1 wins")
-                return player1.money
-            else:
+                return (player1.money,1)
+            elif player1.money < player2.money:
                 print("player 2 wins")
-                return player2.money
+                return (player2.money,2)
+            else:
+                return (None,3)
 
 
         complete = state.is_complete()
@@ -256,17 +260,22 @@ def SimulateRandomGame(state):
                     if len(tmp_state.board_state[i])>0:
                         front_camel_indx = i
                         break
+                player1.money += player1.get_payout(tmp_state,front_camel_indx)
                 player2.money += player2.get_payout(tmp_state,front_camel_indx)
                 state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
                 state = player2.make_move(state)
         else:
+            player1.money += player1.get_payout(state,complete[1])
             player2.money += player2.get_payout(state,complete[1])
             if player1.money > player2.money:
                 print("player 1 wins")
-                return player1.money
-            else:
+                return (player1.money,1)
+            elif player1.money < player2.money:
                 print("player 2 wins")
-                return player2.money
+                return (player2.money,2)
+            else:
+                return(None,3)
+
 
 
 if __name__ == "__main__":
@@ -287,7 +296,21 @@ if __name__ == "__main__":
     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
 
 
-    print(SimulateRandomGame(root))
+    p1_wins = 0
+    p2_wins = 0
+    ties = 0
+    for _ in range(1000):
+        sim = SimulateRandomGame(root)
+        if sim[1] == 1:
+            p1_wins +=1
+        elif sim[1] ==2:
+            p2_wins +=1
+        else:
+            ties +=1
+
+    print(p1_wins)
+    print(p2_wins)
+    print(ties)
 
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
