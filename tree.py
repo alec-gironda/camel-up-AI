@@ -102,8 +102,6 @@ class SinglePlayerGameStateNode(GameStateNode):
 
         children = []
 
-        #bet
-
         for possible_bet in self.bets_left:
             new_bets_left = cp.deepcopy(self.bets_left)
             bet_payout = new_bets_left[possible_bet].pop()
@@ -239,10 +237,10 @@ def SimulateRandomGame(state):
             player1.money += player1.get_payout(state,complete[1])
             player2.money += player2.get_payout(state,complete[1])
             if player1.money > player2.money:
-                print("player 1 wins")
+                print(f"player 1 wins by {player1.money-player2.money} money")
                 return (player1.money,1)
             elif player1.money < player2.money:
-                print("player 2 wins")
+                print(f"player 2 wins by {player2.money - player1.money} money")
                 return (player2.money,2)
             else:
                 return (None,3)
@@ -268,10 +266,10 @@ def SimulateRandomGame(state):
             player1.money += player1.get_payout(state,complete[1])
             player2.money += player2.get_payout(state,complete[1])
             if player1.money > player2.money:
-                print("player 1 wins")
+                print(f"player 1 wins by {player1.money-player2.money} money")
                 return (player1.money,1)
             elif player1.money < player2.money:
-                print("player 2 wins")
+                print(f"player 2 wins by {player2.money - player1.money} money")
                 return (player2.money,2)
             else:
                 return(None,3)
