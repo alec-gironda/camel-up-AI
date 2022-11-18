@@ -204,6 +204,7 @@ class RandomPlayer(Player):
 
         move = 0
         children = gamestate.expand(self.bets_made)
+
         if children:
             move = random.randint(0,len(children)-1) #inclusive
         else:
@@ -218,6 +219,12 @@ class RandomPlayer(Player):
 
 class SmartPlayer(Player):
 
+
+    def __init__(self,expected_value_dict):
+        super().__init__()
+        self.expected_value_dict = expected_value_dict
+
+
     def make_move(self,gamestate : GameStateNode):
         #possible moves:
         #0: roll dice
@@ -229,17 +236,33 @@ class SmartPlayer(Player):
 
         move = 0
         children = gamestate.expand(self.bets_made)
+
         if children:
+            maxChild = children[0][0] #first child expanded, might always be roll?
+            maxValue = 0
+            moveType = children[0][1]
+            for child in children:
+                #print(child[0] in self.expected_value_dict)
+                if child[0] in self.expected_value_dict:
+                    if self.expected_value_dict[child[0]] > maxValue:
+                        maxValue = self.expected_value_dict[child[0]]
+                        maxChild = child[0]
+                        moveType = child[1]
+
             move = random.randint(0,len(children)-1) #inclusive
+
+
+            #move = max(children.items(), key=operator.itemgetter(1))[0]
         else:
             return None
 
-        if children[move][1] == "roll":
+
+        if moveType == "roll":
             self.money +=1
         else:
-            self.bets_made[children[move][1][0]] = children[move][1][1]
+            self.bets_made[moveType[0]] = moveType[1]
 
-        return children[move][0]
+        return maxChild
 
 
 def BFS(root): #should only be done in a single player game
@@ -267,11 +290,25 @@ def BFS(root): #should only be done in a single player game
                     q.append(child)
     return max_money
 
+
 class Simulate:
 
     def __init__(self):
 
         self.model_dict = {}
+
+    def get_winner(self, players):
+        #returns 1 for player1 dub
+        #returns 2 for player 2 dub
+        #retruns 3 for player 2 dub
+
+        if players[0].money > players[1].money:
+            return 1
+        elif players[1].money > players[0].money:
+            return 2
+        else:
+            return 3
+
 
     def SimulateRandomGame(self,state):
         player1 = RandomPlayer()
@@ -309,13 +346,56 @@ class Simulate:
                     for p in players:
                         p.money += p.get_payout(state,complete[1])
 
+                    result = self.get_winner(players)
+
                     for key in self.model_dict:
                         self.model_dict[key] = players[0].money
 
-                    return self.model_dict
+                    return self.model_dict, result
 
 
+    def SimulateRandomVsSmartGame(self,state,expected_value_dict):
+        player1 = SmartPlayer(expected_value_dict)
+        player2 = RandomPlayer()
+        # player3 = RandomPlayer()
+        # player4 = RandomPlayer()
 
+        players = [player1,player2] #,player3,player4]
+        while True:
+            for player in players:
+
+                if player == players[0]: #if player 1
+                    self.model_dict[state] = -1
+                complete = state.is_complete()
+                if not complete[0]:
+                    tmp_state = cp.deepcopy(state)
+                    if len(state.dice_left) == 0:
+
+                        #reset leg
+                        #we can store this so we don't need to search
+                        front_camel_indx = 0
+                        for i in range(len(tmp_state.board_state)-1,-1,-1):
+                            if len(tmp_state.board_state[i])>0:
+                                front_camel_indx = i
+                                break
+
+                        for p in players:
+                            p.money += p.get_payout(tmp_state,front_camel_indx)
+                        state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                        state = player.make_move(state)
+                    else:
+                        state = player.make_move(state)
+                else:
+
+                    for p in players:
+                        p.money += p.get_payout(state,complete[1])
+
+                    result = self.get_winner(players)
+
+                    for key in self.model_dict:
+                        self.model_dict[key] = players[0].money
+
+                    return self.model_dict, result
 
 
 if __name__ == "__main__":
@@ -333,6 +413,8 @@ if __name__ == "__main__":
     # print(BFS(root))
 
     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    root2 = GameStateNode(board_state,dice_left, bets_left, camel_spots)
+
 
 
     #simulating 1000 games
@@ -341,14 +423,39 @@ if __name__ == "__main__":
     # p3_wins = 0
     # p4_wins = 0
 
+    print("Starting simulations")
     ties = 0
     expected_values = {}
+    outcome = [0,0,0]
     for _ in range(1000):
         sim = Simulate()
         sim_dict = sim.SimulateRandomGame(root)
-        expected_values.update(sim_dict)
+
+        #recording game metrics
+        if sim_dict[1] == 1:
+            outcome[0] +=1
+        elif sim_dict[1] == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+
+        expected_values.update(sim_dict[0])
     print(len(expected_values))
 
+    print(f"Simulating random game: {outcome}")
+
+    outcome = [0,0,0]
+    for _ in range(1000):
+        newSim = Simulate()
+        res = newSim.SimulateRandomVsSmartGame(root,expected_values)
+        if res[1] == 1:
+            outcome[0] +=1
+        elif res[1] == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+        #print(f"res: {res}")
+    print(f"Simulating weighted game: {outcome}")
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
 
