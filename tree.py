@@ -26,12 +26,15 @@ class GameStateNode:
 
     """
 
-    def __init__(self,board_state,dice_left,bets_left,camel_spots):
+    def __init__(self,board_state,dice_left,bets_left,camel_spots,parent = None, player1 = False):
         #can likely get rid of the board state, no?
         self.board_state = board_state
         self.dice_left = dice_left
         self.bets_left = bets_left
         self.camel_spots = camel_spots
+        self.parent = parent
+        self.expected_value = 0
+        self.player1 = player1
 
     def is_complete(self):
         #more to figure out with this
@@ -51,7 +54,7 @@ class GameStateNode:
                 if len(new_bets_left[possible_bet])==0:
                     del new_bets_left[possible_bet]
 
-                child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots)
+                child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots,self)
                 children.append((child,(possible_bet,payout)))
 
 
@@ -72,7 +75,7 @@ class GameStateNode:
                         new_board_state[new_camel_spots[camel][0]].append(camel)
 
 
-                child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
+                child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots,self)
                 children.append((child,"roll"))
 
         return children
@@ -166,22 +169,7 @@ class SinglePlayerGameStateNode(GameStateNode):
     def __eq__(self, other):
         return isinstance(other, GameStateNode) and self.board_state == other.board_state and self.dice_left == other.dice_left and self.bets_left == other.bets_left and self.bets_made ==other.bets_made and self.camel_spots == other.camel_spots and self.money == other.money
 
-class RandomPlayer:
-        """Random Player, takes in a state and returns one with a random move
-
-        Attributes:
-        ----------
-        money : int
-            current player earnings
-        bets_made : dict
-            dict of current bets made by the player. Empties and converts into money at the end of a leg
-
-        Returns
-        -------
-        GameStateNode
-            A unique game state of camel up
-
-        """
+class Player:
 
     def __init__(self):
         self.money = 0
@@ -195,6 +183,15 @@ class RandomPlayer:
             payout = self.bets_made[camel]
             del self.bets_made[camel]
         return payout
+
+class RandomPlayer(Player):
+
+    """
+    Random Player, takes in a state and returns one with a random move
+    """
+
+    def __init__(self):
+        super().__init__()
 
     def make_move(self,gamestate : GameStateNode):
         #possible moves:
@@ -218,6 +215,32 @@ class RandomPlayer:
             self.bets_made[children[move][1][0]] = children[move][1][1]
 
         return children[move][0]
+
+class SmartPlayer(Player):
+
+    def make_move(self,gamestate : GameStateNode):
+        #possible moves:
+        #0: roll dice
+        #1: bet on camel 1
+        #2: bet on camel 2
+        #3: bet on camel 3
+        #4: bet on camel 4
+        #5: bet on camel 5
+
+        move = 0
+        children = gamestate.expand(self.bets_made)
+        if children:
+            move = random.randint(0,len(children)-1) #inclusive
+        else:
+            return None
+
+        if children[move][1] == "roll":
+            self.money +=1
+        else:
+            self.bets_made[children[move][1][0]] = children[move][1][1]
+
+        return children[move][0]
+
 
 def BFS(root): #should only be done in a single player game
 
@@ -244,85 +267,53 @@ def BFS(root): #should only be done in a single player game
                     q.append(child)
     return max_money
 
-def SimulateRandomGame(state):
-    """Simulates random game between two players
+class Simulate:
 
-    Inputs:
-    -------
-    state : GameStateNode
-        starting GameState
+    def __init__(self):
 
-    Players:
-    -------
-    player1 : random player class
-    player2 : random player class
+        self.model_dict = {}
 
-    Returns:
-    -------
-    the winning player's money, along with an int signifying which player won the game
+    def SimulateRandomGame(self,state):
+        player1 = RandomPlayer()
+        player2 = RandomPlayer()
+        # player3 = RandomPlayer()
+        # player4 = RandomPlayer()
 
-    """
-    player1 = RandomPlayer()
-    player2 = RandomPlayer()
+        players = [player1,player2] #,player3,player4]
+        while True:
+            for player in players:
 
-    while True:
-        complete = state.is_complete() #checks if complete
-        if not complete[0]: #No camels have reached the end of the race
-            tmp_state = cp.deepcopy(state)
-            state = player1.make_move(state)
-            #resets leg
-            if not state:
-                #we can store this so we don't need to search
-                front_camel_indx = 0
-                for i in range(len(tmp_state.board_state)-1,-1,-1):
-                    if len(tmp_state.board_state[i])>0:
-                        front_camel_indx = i
-                        break
-                #adding bets
-                player1.money += player1.get_payout(tmp_state,front_camel_indx)
-                player2.money += player2.get_payout(tmp_state,front_camel_indx)
-                state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
-                state = player1.make_move(state)
-        else: #game is over, getting payouts and determining winner
-            player1.money += player1.get_payout(state,complete[1])
-            player2.money += player2.get_payout(state,complete[1])
-            if player1.money > player2.money:
-                print(f"player 1 wins by {player1.money-player2.money} money")
-                return (player1.money,1)
-            elif player1.money < player2.money:
-                print(f"player 2 wins by {player2.money - player1.money} money")
-                return (player2.money,2)
-            else:
-                return (None,3)
+                if player == players[0]: #if player 1
+                    self.model_dict[state] = -1
+                complete = state.is_complete()
+                if not complete[0]:
+                    tmp_state = cp.deepcopy(state)
+                    if len(state.dice_left) == 0:
 
-        #same code as above, but for player2
-        complete = state.is_complete()
-        if not complete[0]:
-            tmp_state = cp.deepcopy(state)
-            state = player2.make_move(state)
-            #reset leg
-            if not state:
-                #we can store this so we don't need to search
-                front_camel_indx = 0
-                for i in range(len(tmp_state.board_state)-1,-1,-1):
-                    if len(tmp_state.board_state[i])>0:
-                        front_camel_indx = i
-                        break
-                player1.money += player1.get_payout(tmp_state,front_camel_indx)
-                player2.money += player2.get_payout(tmp_state,front_camel_indx)
-                state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
-                state = player2.make_move(state)
-        else:
-            player1.money += player1.get_payout(state,complete[1])
-            player2.money += player2.get_payout(state,complete[1])
-            if player1.money > player2.money:
-                print(f"player 1 wins by {player1.money-player2.money} money")
-                return (player1.money,1)
-            elif player1.money < player2.money:
-                print(f"player 2 wins by {player2.money - player1.money} money")
-                return (player2.money,2)
-            else:
-                return(None,3)
+                        #reset leg
+                        #we can store this so we don't need to search
+                        front_camel_indx = 0
+                        for i in range(len(tmp_state.board_state)-1,-1,-1):
+                            if len(tmp_state.board_state[i])>0:
+                                front_camel_indx = i
+                                break
+
+                        for p in players:
+                            p.money += p.get_payout(tmp_state,front_camel_indx)
+                        state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                        state = player.make_move(state)
+                    else:
+                        state = player.make_move(state)
+                else:
+
+                    for p in players:
+                        p.money += p.get_payout(state,complete[1])
+
+                    for key in self.model_dict:
+                        self.model_dict[key] = players[0].money
+
+                    return self.model_dict
+
 
 
 
@@ -347,19 +338,16 @@ if __name__ == "__main__":
     #simulating 1000 games
     p1_wins = 0
     p2_wins = 0
-    ties = 0
-    for _ in range(1000):
-        sim = SimulateRandomGame(root)
-        if sim[1] == 1:
-            p1_wins +=1
-        elif sim[1] ==2:
-            p2_wins +=1
-        else:
-            ties +=1
+    # p3_wins = 0
+    # p4_wins = 0
 
-    print(p1_wins)
-    print(p2_wins)
-    print(ties)
+    ties = 0
+    expected_values = {}
+    for _ in range(1000):
+        sim = Simulate()
+        sim_dict = sim.SimulateRandomGame(root)
+        expected_values.update(sim_dict)
+    print(len(expected_values))
 
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
