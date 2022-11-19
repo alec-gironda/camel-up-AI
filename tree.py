@@ -1,6 +1,23 @@
 from collections import deque
 import copy as cp
 import random
+import pickle
+import time
+
+def calculate_runtime(func):
+    '''
+    decorator to calculate the runtime of functions
+    while still returning their output
+    '''
+    def wrapper(*args,**kwargs):
+        start_time = time.time()
+
+        out = func(*args,**kwargs)
+
+        print("--- %s seconds ---" % (time.time() - start_time))
+
+        return out
+    return wrapper
 
 class GameStateNode:
 
@@ -343,11 +360,29 @@ if __name__ == "__main__":
 
     ties = 0
     expected_values = {}
-    for _ in range(1000):
-        sim = Simulate()
-        sim_dict = sim.SimulateRandomGame(root)
-        expected_values.update(sim_dict)
-    print(len(expected_values))
+    # for _ in range(10000):
+    #     sim = Simulate()
+    #     sim_dict = sim.SimulateRandomGame(root)
+    #     expected_values.update(sim_dict)
+    #
+    # with open('model.pkl', 'wb') as f:
+    #     pickle.dump(expected_values, f,-1)
+    #
+    # print("done")
+
+    @calculate_runtime
+    def thing():
+
+        d = 0
+
+        with open('model.pkl', 'rb') as f:
+            d = pickle.load(f)
+
+        return d
+
+    d = thing()
+
+    print(len(d))
 
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
