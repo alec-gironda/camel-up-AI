@@ -40,6 +40,10 @@ class GameStateNode:
         self.expected_value = 0
         self.player1 = player1
 
+    """
+    Hashing parameters:
+    
+    """
     def get_hashable_board_state(self):
 
         res = [0 for i in range(0,20*5)]
@@ -336,6 +340,13 @@ class Simulate:
 class Network:
     """
     Densely connected NN trained to choose optimal move in camel up given a game state
+
+    compile(self):
+        compiles model, with 100 units and 1 output layer. Uses mse for loss and adam optimizer
+    train_model(self):
+        fits training data with 100 epochs
+    save_model(self):
+        saves model weights
     """
     def __init__(self,x_train,y_train):
 
