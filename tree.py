@@ -4,6 +4,8 @@ import random
 import pickle
 import time
 import pandas as pd
+import tensorflow as tf
+import numpy as np
 
 class GameStateNode:
 
@@ -123,17 +125,17 @@ class GameStateNode:
 
         return children
 
-    def __key(self):
+    def key(self):
         res = self.get_hashable_board_state()
         res.extend(self.get_hashable_dice_left())
         res.extend(self.get_hashable_bets_left())
         res.extend(self.get_hashable_camel_spots())
         return tuple(res)
     def __hash__(self):
-        return hash(self.__key())
+        return hash(self.key())
     #overriding == operator
     def __eq__(self, other):
-        return isinstance(other, GameStateNode) and self.__key() == other.__key()
+        return isinstance(other, GameStateNode) and self.key() == other.key()
 
 
 class SinglePlayerGameStateNode(GameStateNode):
@@ -268,9 +270,9 @@ class RandomPlayer(Player):
 class SmartPlayer(Player):
 
 
-    def __init__(self,expected_value_dict):
+    def __init__(self):
         super().__init__()
-        self.expected_value_dict = expected_value_dict
+        self.new_model = tf.keras.models.load_model('random_sims_model')
 
 
     def make_move(self,gamestate : GameStateNode):
@@ -281,33 +283,22 @@ class SmartPlayer(Player):
         flag = False
 
         if children:
-            random_move = random.randint(0,len(children)-1) #inclusive
-            maxChild = children[random_move][0]
-            maxValue = 0
-            moveType = children[random_move][1]
-            for child in children:
-                if child[0] in self.expected_value_dict:
-                    flag = True
-                    if self.expected_value_dict[child[0]] > maxValue:
-                        maxValue = self.expected_value_dict[child[0]]
-                        maxChild = child[0]
-                        moveType = child[1]
+            child_np_array = np.asarray(np.asarray([np.asarray(child[0].key()) for child in children]))
+            preds = self.new_model.predict(child_np_array,verbose = False)
+            move = np.argmax(preds)
+
+            maxChild = children[move][0]
+            moveType = children[move][1]
 
         else:
             return None
-
-        if flag:
-            print("FLAG","\n")
-        print(moveType)
-        print(maxChild)
-
 
         if moveType == "roll":
             self.money +=1
         else:
             self.bets_made[moveType[0]] = moveType[1]
 
-        print(maxChild.board_state)
+        # print(maxChild.board_state)
         return maxChild
 
 
@@ -341,7 +332,8 @@ class Simulate:
 
     def __init__(self):
 
-        self.model_df = pd.DataFrame(columns = ["board_state","dice_left","bets_left","camel_spots","expected_value"])
+        self.game_tup_x = []
+        self.game_tup_labels = []
         self.model_dict = {}
 
     def get_winner(self, players):
@@ -395,16 +387,17 @@ class Simulate:
 
                     result = self.get_winner(players)
 
-                    for key in self.model_dict:
-                        print(key)
-                        self.model_df.loc[len(self.model_df.index)] = [key.board_state, key.dice_left, key.bets_left, key.camel_spots,players[0].money]
-                        self.model_dict[key] = players[0].money
+                    for state in self.model_dict:
+                        self.game_tup_x.append(state.key())
+                        self.game_tup_labels.append(players[0].money)
 
-                    return self.model_dict, result
+                        self.model_dict[state] = players[0].money
+
+                    return self.game_tup_x,self.game_tup_labels, result
 
 
-    def SimulateRandomVsSmartGame(self,state,expected_value_dict):
-        player1 = SmartPlayer(expected_value_dict)
+    def SimulateRandomVsSmartGame(self,state):
+        player1 = SmartPlayer()
         player2 = RandomPlayer()
         # player3 = RandomPlayer()
         # player4 = RandomPlayer()
@@ -474,62 +467,105 @@ if __name__ == "__main__":
     # p3_wins = 0
     # p4_wins = 0
 
-    print("Starting simulations")
-    start_time = time.time()
-    ties = 0
-    expected_values = {}
-    outcome = [0,0,0]
-    i=0
-    for _ in range(10000):
-        print(i,len(expected_values))
-        sim = Simulate()
-        sim_dict = sim.SimulateRandomGame(root)
-
-        #recording game metrics
-        if sim_dict[1] == 1:
-            outcome[0] +=1
-        elif sim_dict[1] == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
-        i+=1
-
-        expected_values.update(sim_dict[0])
-    print("--- %s seconds ---" % (time.time() - start_time))
-    print(len(expected_values))
-
-    with open('model.pkl', 'wb') as f:
-        pickle.dump(expected_values, f)
-
-
-    print("loading dict")
-    start_time = time.time()
-    expected_values = 0
-    with open('model.pkl', 'rb') as f:
-        expected_values = pickle.load(f)
-    print("--- %s seconds ---" % (time.time() - start_time))
-
-
-    # print(f"Simulating random game: {outcome}")
-
-    # print("simulating")
-    # i=0
+    # print("Starting simulations")
+    # start_time = time.time()
+    # ties = 0
+    # expected_values = {}
     # outcome = [0,0,0]
-    #
+    # i=0
     # for _ in range(10000):
+    #     print(i,len(expected_values))
+    #     sim = Simulate()
+    #     sim_dict = sim.SimulateRandomGame(root)
     #
-    #     print(i)
-    #     newSim = Simulate()
-    #     res = newSim.SimulateRandomVsSmartGame(root,expected_values)
-    #     if res[1] == 1:
+    #     #recording game metrics
+    #     if sim_dict[1] == 1:
     #         outcome[0] +=1
-    #     elif res[1] == 2:
+    #     elif sim_dict[1] == 2:
     #         outcome[1] +=1
     #     else:
     #         outcome[2] +=1
     #     i+=1
-    #     #print(f"res: {res}")
-    # print(f"Simulating weighted game: {outcome}")
+    #
+    #     expected_values.update(sim_dict[0])
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    # print(len(expected_values))
+
+    # print("Starting simulations")
+    # start_time = time.time()
+    # ties = 0
+    # expected_values = {}
+    # outcome = [0,0,0]
+    # i=0
+    # for _ in range(10000):
+    #     print(i,len(expected_values))
+    #     sim = Simulate()
+    #     sim_dict = sim.SimulateRandomGame(root)
+    #
+    #     #recording game metrics
+    #     if sim_dict[1] == 1:
+    #         outcome[0] +=1
+    #     elif sim_dict[1] == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+    #     i+=1
+    #
+    #     expected_values.update(sim_dict[0])
+    # print("--- %s seconds ---" % (time.time() - start_time))
+    # print(len(expected_values))
+
+    # with open('model.pkl', 'wb') as f:
+    #     pickle.dump(expected_values, f)
+    #
+    #
+    # print("loading dict")
+    # start_time = time.time()
+    # expected_values = 0
+    # with open('model.pkl', 'rb') as f:
+    #     expected_values = pickle.load(f)
+    # print("--- %s seconds ---" % (time.time() - start_time))
+
+
+    # print(f"Simulating random game: {outcome}")
+
+    print("simulating")
+    i=0
+    outcome = [0,0,0]
+
+    for _ in range(1000):
+
+        print(i)
+        newSim = Simulate()
+        res = newSim.SimulateRandomGame(root)
+        if res[2] == 1:
+            outcome[0] +=1
+        elif res[2] == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+        i+=1
+        #print(f"res: {res}")
+    print(f"Simulating random game: {outcome}")
+
+    print("simulating")
+    i=0
+    outcome = [0,0,0]
+
+    for _ in range(1000):
+
+        print(i)
+        newSim = Simulate()
+        res = newSim.SimulateRandomVsSmartGame(root)
+        if res[1] == 1:
+            outcome[0] +=1
+        elif res[1] == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+        i+=1
+        #print(f"res: {res}")
+    print(f"Simulating weighted game: {outcome}")
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
 
