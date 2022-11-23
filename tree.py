@@ -3,6 +3,7 @@ import copy as cp
 import random
 import pickle
 import time
+import pandas as pd
 
 class GameStateNode:
 
@@ -37,6 +38,46 @@ class GameStateNode:
         self.parent = parent
         self.expected_value = 0
         self.player1 = player1
+        # print(self.__key())
+    def get_hashable_board_state(self):
+
+        res = [0 for i in range(0,20*5)]
+
+        for key in self.board_state:
+            start = (key-1)*5
+            res[start:start+len(self.board_state[key])] = self.board_state[key]
+
+        return res
+
+    def get_hashable_bets_left(self):
+
+        res = [0 for i in range(0,5*3)]
+
+        for key in self.bets_left:
+            start = (key-1)*3
+            res[start:start+len(self.bets_left[key])] = self.bets_left[key]
+
+        return res
+
+    def get_hashable_camel_spots(self):
+
+        res = [0 for i in range(0,5*2)]
+
+        for key in self.camel_spots:
+            start = (key-1)*2
+            res[start:start+len(self.camel_spots[key])] = self.camel_spots[key]
+
+        return res
+
+    def get_hashable_dice_left(self):
+
+        res = [0 for i in range(5)]
+
+        for die in self.dice_left:
+            res[die-1] = 1
+
+        return tuple(res)
+
 
     def is_complete(self):
         #more to figure out with this
@@ -82,12 +123,17 @@ class GameStateNode:
 
         return children
 
+    def __key(self):
+        res = self.get_hashable_board_state()
+        res.extend(self.get_hashable_dice_left())
+        res.extend(self.get_hashable_bets_left())
+        res.extend(self.get_hashable_camel_spots())
+        return tuple(res)
     def __hash__(self):
-        return hash((frozenset(self.board_state),frozenset(self.dice_left),frozenset(self.bets_left),frozenset(self.camel_spots)))
-
+        return hash(self.__key())
     #overriding == operator
     def __eq__(self, other):
-        return isinstance(other, GameStateNode) and self.board_state == other.board_state and self.dice_left == other.dice_left and self.bets_left == other.bets_left and self.camel_spots == other.camel_spots
+        return isinstance(other, GameStateNode) and self.__key() == other.__key()
 
 
 class SinglePlayerGameStateNode(GameStateNode):
@@ -228,18 +274,11 @@ class SmartPlayer(Player):
 
 
     def make_move(self,gamestate : GameStateNode):
-        #possible moves:
-        #0: roll dice
-        #1: bet on camel 1
-        #2: bet on camel 2
-        #3: bet on camel 3
-        #4: bet on camel 4
-        #5: bet on camel 5
 
-        move = 0
         moveType = 0
         maxChild = 0
         children = gamestate.expand(self.bets_made)
+        flag = False
 
         if children:
             random_move = random.randint(0,len(children)-1) #inclusive
@@ -248,7 +287,7 @@ class SmartPlayer(Player):
             moveType = children[random_move][1]
             for child in children:
                 if child[0] in self.expected_value_dict:
-                    print("hi")
+                    flag = True
                     if self.expected_value_dict[child[0]] > maxValue:
                         maxValue = self.expected_value_dict[child[0]]
                         maxChild = child[0]
@@ -257,12 +296,18 @@ class SmartPlayer(Player):
         else:
             return None
 
+        if flag:
+            print("FLAG","\n")
+        print(moveType)
+        print(maxChild)
+
 
         if moveType == "roll":
             self.money +=1
         else:
             self.bets_made[moveType[0]] = moveType[1]
 
+        print(maxChild.board_state)
         return maxChild
 
 
@@ -296,6 +341,7 @@ class Simulate:
 
     def __init__(self):
 
+        self.model_df = pd.DataFrame(columns = ["board_state","dice_left","bets_left","camel_spots","expected_value"])
         self.model_dict = {}
 
     def get_winner(self, players):
@@ -350,6 +396,8 @@ class Simulate:
                     result = self.get_winner(players)
 
                     for key in self.model_dict:
+                        print(key)
+                        self.model_df.loc[len(self.model_df.index)] = [key.board_state, key.dice_left, key.bets_left, key.camel_spots,players[0].money]
                         self.model_dict[key] = players[0].money
 
                     return self.model_dict, result
@@ -366,7 +414,8 @@ class Simulate:
             for player in players:
 
                 if player == players[0]: #if player 1
-                    self.model_dict[state] = -1
+                    self.model_dict[state] = players[0].money
+
                 complete = state.is_complete()
                 if not complete[0]:
                     tmp_state = cp.deepcopy(state)
@@ -374,6 +423,7 @@ class Simulate:
 
                         #reset leg
                         #we can store this so we don't need to search
+
                         front_camel_indx = 0
                         for i in range(len(tmp_state.board_state)-1,-1,-1):
                             if len(tmp_state.board_state[i])>0:
@@ -414,7 +464,7 @@ if __name__ == "__main__":
     # print(BFS(root))
 
     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-    root2 = GameStateNode(board_state,dice_left, bets_left, camel_spots)
+    # root2 = GameStateNode(board_state,dice_left, bets_left, camel_spots)
 
 
 
@@ -424,27 +474,32 @@ if __name__ == "__main__":
     # p3_wins = 0
     # p4_wins = 0
 
-    # print("Starting simulations")
-    # ties = 0
-    # expected_values = {}
-    # outcome = [0,0,0]
-    # for _ in range(10):
-    #     sim = Simulate()
-    #     sim_dict = sim.SimulateRandomGame(root)
-    #
-    #     #recording game metrics
-    #     if sim_dict[1] == 1:
-    #         outcome[0] +=1
-    #     elif sim_dict[1] == 2:
-    #         outcome[1] +=1
-    #     else:
-    #         outcome[2] +=1
-    #
-    #     expected_values.update(sim_dict[0])
-    # print(len(expected_values))
-    #
-    # with open('test.pkl', 'wb') as f:
-    #     pickle.dump(expected_values, f)
+    print("Starting simulations")
+    start_time = time.time()
+    ties = 0
+    expected_values = {}
+    outcome = [0,0,0]
+    i=0
+    for _ in range(10000):
+        print(i,len(expected_values))
+        sim = Simulate()
+        sim_dict = sim.SimulateRandomGame(root)
+
+        #recording game metrics
+        if sim_dict[1] == 1:
+            outcome[0] +=1
+        elif sim_dict[1] == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+        i+=1
+
+        expected_values.update(sim_dict[0])
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print(len(expected_values))
+
+    with open('model.pkl', 'wb') as f:
+        pickle.dump(expected_values, f)
 
 
     print("loading dict")
@@ -457,24 +512,24 @@ if __name__ == "__main__":
 
     # print(f"Simulating random game: {outcome}")
 
-    print("simulating")
-    i=0
-    outcome = [0,0,0]
-
-    for _ in range(1000):
-
-        print(i)
-        newSim = Simulate()
-        res = newSim.SimulateRandomVsSmartGame(root,expected_values)
-        if res[1] == 1:
-            outcome[0] +=1
-        elif res[1] == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
-        i+=1
-        #print(f"res: {res}")
-    print(f"Simulating weighted game: {outcome}")
+    # print("simulating")
+    # i=0
+    # outcome = [0,0,0]
+    #
+    # for _ in range(10000):
+    #
+    #     print(i)
+    #     newSim = Simulate()
+    #     res = newSim.SimulateRandomVsSmartGame(root,expected_values)
+    #     if res[1] == 1:
+    #         outcome[0] +=1
+    #     elif res[1] == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+    #     i+=1
+    #     #print(f"res: {res}")
+    # print(f"Simulating weighted game: {outcome}")
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
 
 
