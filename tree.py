@@ -272,7 +272,8 @@ class SmartPlayer(Player):
 
     def __init__(self):
         super().__init__()
-        self.new_model = tf.keras.models.load_model('random_sims_model')
+
+        self.model = tf.keras.models.load_model('simulation_model')
 
 
     def make_move(self,gamestate : GameStateNode):
@@ -284,7 +285,7 @@ class SmartPlayer(Player):
 
         if children:
             child_np_array = np.asarray(np.asarray([np.asarray(child[0].key()) for child in children]))
-            preds = self.new_model.predict(child_np_array,verbose = False)
+            preds = self.model.predict(child_np_array,verbose = False)
             move = np.argmax(preds)
 
             maxChild = children[move][0]
@@ -436,10 +437,94 @@ class Simulate:
 
                     result = self.get_winner(players)
 
-                    for key in self.model_dict:
-                        self.model_dict[key] = players[0].money
+                    for state in self.model_dict:
+                        self.game_tup_x.append(state.key())
+                        self.game_tup_labels.append(players[0].money)
 
-                    return self.model_dict, result
+                        self.model_dict[state] = players[0].money
+
+                    return self.game_tup_x,self.game_tup_labels, result
+
+    def SimulateSmartVsSmartGame(self,state):
+        player1 = SmartPlayer()
+        player2 = SmartPlayer()
+        # player3 = RandomPlayer()
+        # player4 = RandomPlayer()
+
+        players = [player1,player2] #,player3,player4]
+        while True:
+            for player in players:
+
+                if player == players[0]: #if player 1
+                    self.model_dict[state] = -1
+                complete = state.is_complete()
+                if not complete[0]:
+                    tmp_state = cp.deepcopy(state)
+                    if len(state.dice_left) == 0:
+
+                        #reset leg
+                        #we can store this so we don't need to search
+                        front_camel_indx = 0
+                        for i in range(len(tmp_state.board_state)-1,-1,-1):
+                            if len(tmp_state.board_state[i])>0:
+                                front_camel_indx = i
+                                break
+
+                        for p in players:
+                            p.money += p.get_payout(tmp_state,front_camel_indx)
+                        state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                        state = player.make_move(state)
+                    else:
+                        state = player.make_move(state)
+                else:
+
+                    for p in players:
+                        p.money += p.get_payout(state,complete[1])
+
+                    result = self.get_winner(players)
+
+                    for state in self.model_dict:
+                        self.game_tup_x.append(state.key())
+                        self.game_tup_labels.append(players[0].money)
+
+                        self.model_dict[state] = players[0].money
+
+                    return self.game_tup_x,self.game_tup_labels, result
+
+class Network:
+    def __init__(self,x_train,y_train):
+
+        self.x_train = np.asarray(x_train)
+        self.y_train = np.asarray(y_train)
+
+        self.model = None
+
+    def compile(self):
+
+        self.model = tf.keras.models.Sequential()
+        self.model.add(tf.keras.layers.Flatten())
+        self.model.add(tf.keras.layers.Dense(100,activation = tf.nn.relu))
+        self.model.add(tf.keras.layers.Dense(1))
+
+        optim = tf.keras.optimizers.Adam(learning_rate=0.01)
+
+        self.model.compile(optimizer=optim,loss='mean_squared_error',metrics=tf.keras.metrics.RootMeanSquaredError())
+
+        pass
+
+    def train_model(self):
+
+        self.model.fit(self.x_train,self.y_train,epochs=100)
+
+        pass
+
+    def save_model(self):
+
+        self.model.save("simulation_model")
+
+        pass
+
+
 
 
 if __name__ == "__main__":
@@ -529,6 +614,9 @@ if __name__ == "__main__":
 
     # print(f"Simulating random game: {outcome}")
 
+    x_train = []
+    y_train = []
+
     print("simulating")
     i=0
     outcome = [0,0,0]
@@ -536,18 +624,30 @@ if __name__ == "__main__":
     for _ in range(1000):
 
         print(i)
-        newSim = Simulate()
-        res = newSim.SimulateRandomGame(root)
-        if res[2] == 1:
+        sim = Simulate()
+        sim_x, sim_y, res = sim.SimulateRandomGame(root)
+
+        x_train.extend(sim_x)
+        y_train.extend(sim_y)
+        if res == 1:
             outcome[0] +=1
-        elif res[2] == 2:
+        elif res == 2:
             outcome[1] +=1
         else:
             outcome[2] +=1
         i+=1
+
+    new_network = Network(x_train,y_train)
+    new_network.compile()
+    new_network.train_model()
+    new_network.save_model()
         #print(f"res: {res}")
     print(f"Simulating random game: {outcome}")
 
+
+    x_train = []
+    y_train = []
+
     print("simulating")
     i=0
     outcome = [0,0,0]
@@ -555,15 +655,23 @@ if __name__ == "__main__":
     for _ in range(1000):
 
         print(i)
-        newSim = Simulate()
-        res = newSim.SimulateRandomVsSmartGame(root)
-        if res[1] == 1:
+        sim = Simulate()
+        sim_x, sim_y, res = sim.SimulateRandomVsSmartGame(root)
+
+        x_train.extend(sim_x)
+        y_train.extend(sim_y)
+        if res == 1:
             outcome[0] +=1
-        elif res[1] == 2:
+        elif res == 2:
             outcome[1] +=1
         else:
             outcome[2] +=1
         i+=1
+
+    new_network = Network(x_train,y_train)
+    new_network.compile()
+    new_network.train_model()
+    new_network.save_model()
         #print(f"res: {res}")
     print(f"Simulating weighted game: {outcome}")
     # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
