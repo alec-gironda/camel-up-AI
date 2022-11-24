@@ -42,7 +42,7 @@ class GameStateNode:
 
     """
     Hashing parameters:
-    
+
     """
     def get_hashable_board_state(self):
 
@@ -335,7 +335,7 @@ class Simulate:
                         self.model_dict[state] = players[0].money
 
 
-                    return self.game_tup_x,self.game_tup_labels, result
+                    return self.game_tup_x,self.game_tup_labels, result, players[0].money
 
 class Network:
     """
@@ -380,6 +380,9 @@ class Network:
 
         pass
 
+# class Plot:
+
+
 def shuffle_start():
     """
     Returns a shuffled starting state with camels placed randomly placed on the first 2 spots,
@@ -416,77 +419,75 @@ if __name__ == "__main__":
     money = 0
 
     #randomizing placement, should put this in
-    board_state, camel_spots = shuffle_start()
+    # board_state, camel_spots = shuffle_start()
 
     #starting node for all games, currently we dont randomize placement
-    root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    # root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
 
-    '''
-
-    x_train = []
-    y_train = []
-
-    print("simulating")
-    outcome = [0,0,0] #wins, losses, ties
-
-    for i in range(1000): #simulating 1000 games
-
-        print(f"simulating game #{i}")
-        sim = Simulate()
-        sim_x, sim_y, res = sim.SimulateGame(root,0)
-
-        x_train.extend(sim_x)
-        y_train.extend(sim_y)
-        if res == 1:
-            outcome[0] +=1
-        elif res == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
-
-    new_network = Network(x_train,y_train)
-    new_network.compile()
-    new_network.train_model()
-    new_network.save_model("random_model")
-
-        #print(f"res: {res}")
-    print(f"Simulated random game: {outcome}")
-
-    '''
-    x_train = []
-    y_train = []
-
-    print("simulating")
-    outcome = [0,0,0]
-
-    for i in range(1000):
-
-        print(i)
-        sim = Simulate()
-        sim_x, sim_y, res = sim.SimulateGame(root,1,"new_model0")
-
-        x_train.extend(sim_x)
-        y_train.extend(sim_y)
-        if res == 1:
-            outcome[0] +=1
-        elif res == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
-
-    #os.rename("random_model","new_model0")
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0] #wins, losses, ties
+    #
+    # for i in range(100): #simulating 1000 games
+    #
+    #     print(f"simulating game #{i}")
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,0)
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+    #
+    # # new_network = Network(x_train,y_train)
+    # # new_network.compile()
+    # # new_network.train_model()
+    # # new_network.save_model("new_model0")
+    #
+    #     #print(f"res: {res}")
+    # print(f"Simulating random game: {outcome}, money: {money}")
 
 
-   #new_network = Network(x_train,y_train)
-    #new_network.compile()
-    #new_network.train_model()
-    #new_network.save_model("new_model1")
-        #print(f"res: {res}")
-    print(f"Simulating first weighted game: {outcome}")
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0]
+    #
+    # for i in range(100):
+    #
+    #     print(i)
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,1,"new_model0")
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
 
-    '''
+    # new_network = Network(x_train,y_train)
+    # new_network.compile()
+    # new_network.train_model()
+    # new_network.save_model("new_model1")
 
-    for sim_indx in range(1,6):
+    # print(f"Simulating first weighted game: {outcome}")
+
+
+    for sim_indx in range(6,13):
 
         x_train = []
         y_train = []
@@ -499,7 +500,9 @@ if __name__ == "__main__":
 
             print(i)
             sim = Simulate()
-            sim_x, sim_y, res = sim.SimulateGame(root,2,"new_model" + str(sim_indx),"new_model" + str(sim_indx-1))
+            board_state, camel_spots = shuffle_start()
+            root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+            sim_x, sim_y, res, money = sim.SimulateGame(root,2,"new_model" + str(sim_indx),"new_model" + str(sim_indx-1))
 
             x_train.extend(sim_x)
             y_train.extend(sim_y)
@@ -514,20 +517,33 @@ if __name__ == "__main__":
         new_network.compile()
         new_network.train_model()
         new_network.save_model("new_model" + str(sim_indx+1))
-            #print(f"res: {res}")
+
         print(f"Simulating weighted game: {outcome}")
-    '''
-    # for _ in range(5):
 
-
-
-    # curr = GameStateNode({1:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),2:(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)})
-
-
-
-# B G O W R
-# 0 0 0 0 0
-# 0 0 0 0 0
-# 0 0 1 0 0
-# 0 1 0 0 0
-# 1 0 0 0 0
+    # moneys = []
+    #
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0]
+    #
+    # for i in range(100):
+    #
+    #     print(i)
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,2,"new_model6","new_model5")
+    #     moneys.append(money)
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+    #
+    # print(f"Simulating weighted game: {outcome}, money: {np.mean(moneys)}")
