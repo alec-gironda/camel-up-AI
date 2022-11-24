@@ -344,6 +344,8 @@ if __name__ == "__main__":
 
     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
 
+    '''
+
     x_train = []
     y_train = []
 
@@ -373,7 +375,7 @@ if __name__ == "__main__":
         #print(f"res: {res}")
     print(f"Simulated random game: {outcome}")
 
-
+    '''
     x_train = []
     y_train = []
 
@@ -384,7 +386,7 @@ if __name__ == "__main__":
 
         print(i)
         sim = Simulate()
-        sim_x, sim_y, res = sim.SimulateGame(root,1,"random_model")
+        sim_x, sim_y, res = sim.SimulateGame(root,1,"new_model0")
 
         x_train.extend(sim_x)
         y_train.extend(sim_y)
@@ -395,17 +397,19 @@ if __name__ == "__main__":
         else:
             outcome[2] +=1
 
-    os.rename("random_model","prev_model")
+    #os.rename("random_model","new_model0")
 
 
-    new_network = Network(x_train,y_train)
-    new_network.compile()
-    new_network.train_model()
-    new_network.save_model("new_model")
+   #new_network = Network(x_train,y_train)
+    #new_network.compile()
+    #new_network.train_model()
+    #new_network.save_model("new_model1")
         #print(f"res: {res}")
     print(f"Simulating first weighted game: {outcome}")
 
-    for _ in range(5):
+    '''
+
+    for sim_indx in range(1,6):
 
         x_train = []
         y_train = []
@@ -418,7 +422,7 @@ if __name__ == "__main__":
 
             print(i)
             sim = Simulate()
-            sim_x, sim_y, res = sim.SimulateGame(root,2,"new_model","prev_model")
+            sim_x, sim_y, res = sim.SimulateGame(root,2,"new_model" + str(sim_indx),"new_model" + str(sim_indx-1))
 
             x_train.extend(sim_x)
             y_train.extend(sim_y)
@@ -429,15 +433,13 @@ if __name__ == "__main__":
             else:
                 outcome[2] +=1
 
-        os.rename("new_model","prev_model")
-
         new_network = Network(x_train,y_train)
         new_network.compile()
         new_network.train_model()
-        new_network.save_model("new_model")
+        new_network.save_model("new_model" + str(sim_indx+1))
             #print(f"res: {res}")
         print(f"Simulating weighted game: {outcome}")
-
+    '''
     # for _ in range(5):
 
 
