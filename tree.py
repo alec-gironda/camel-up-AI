@@ -487,7 +487,7 @@ if __name__ == "__main__":
     # print(f"Simulating first weighted game: {outcome}")
 
 
-    for sim_indx in range(6,13):
+    for sim_indx in range(10,13):
 
         x_train = []
         y_train = []
