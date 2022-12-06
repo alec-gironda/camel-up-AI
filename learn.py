@@ -426,41 +426,41 @@ if __name__ == "__main__":
 
 
     #starting game configs
-    board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
-    bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
-    bets_made = {}
-    dice_left = set([1,2,3,4,5])
-    camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
-    money = 0
-
-    # randomizing placement, should put this in
-    board_state, camel_spots = shuffle_start()
-
-    #starting node for all games, currently we dont randomize placement
-    root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-
-    x_train = []
-    y_train = []
-
-    print("simulating")
-    outcome = [0,0,0] #wins, losses, ties
-
-    for i in range(100): #simulating 1000 games
-
-        print(f"simulating game #{i}")
-        sim = Simulate()
-        board_state, camel_spots = shuffle_start()
-        root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-        sim_x, sim_y, res, money = sim.SimulateGame(root,0)
-
-        x_train.extend(sim_x)
-        y_train.extend(sim_y)
-        if res == 1:
-            outcome[0] +=1
-        elif res == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
+    # board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
+    # bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
+    # bets_made = {}
+    # dice_left = set([1,2,3,4,5])
+    # camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
+    # money = 0
+    #
+    # # randomizing placement, should put this in
+    # board_state, camel_spots = shuffle_start()
+    #
+    # #starting node for all games, currently we dont randomize placement
+    # root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0] #wins, losses, ties
+    #
+    # for i in range(100): #simulating 1000 games
+    #
+    #     print(f"simulating game #{i}")
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,0)
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
     #
     # # new_network = Network(x_train,y_train)
     # # new_network.compile()
