@@ -3,7 +3,6 @@ import copy as cp
 import random
 import pickle
 import time
-import pandas as pd
 import tensorflow as tf
 import numpy as np
 import os
@@ -99,14 +98,13 @@ class GameStateNode:
         children = []
 
         for possible_bet in self.bets_left:
-            if possible_bet not in bets_made:
-                new_bets_left = cp.deepcopy(self.bets_left)
-                payout = new_bets_left[possible_bet].pop()
-                if len(new_bets_left[possible_bet])==0:
-                    del new_bets_left[possible_bet]
+            new_bets_left = cp.deepcopy(self.bets_left)
+            payout = new_bets_left[possible_bet].pop()
+            if len(new_bets_left[possible_bet])==0:
+                del new_bets_left[possible_bet]
 
-                child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots)
-                children.append((child,(possible_bet,payout)))
+            child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots)
+            children.append((child,(possible_bet,payout)))
 
 
         #roll
@@ -116,14 +114,11 @@ class GameStateNode:
         if len(dice_list) == 1:
             die_num = 1
         else:
-            print(len(dice_list))
             die_num = random.randint(1,len(dice_list))
         die = dice_list[die_num-1]
-        self.die = die
         new_dice_left = cp.deepcopy(self.dice_left)
         new_dice_left.discard(die)
         die_roll = random.randint(1,3)
-        self.die_roll = die_roll
         new_camel_spots = cp.deepcopy(self.camel_spots)
         new_board_state = cp.deepcopy(self.board_state)
         #update the position of camel # die
@@ -135,8 +130,10 @@ class GameStateNode:
                 new_board_state[new_camel_spots[camel][0]].append(camel)
 
 
-            child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
-            children.append((child,"roll"))
+        child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
+        child.die = die
+        child.die_roll = die_roll
+        children.append((child,"roll"))
 
         return children
 
