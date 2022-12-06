@@ -7,6 +7,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 import os
+import pygame
 
 class GameStateNode:
     """Create an instance of a game state for Camel up
@@ -37,6 +38,8 @@ class GameStateNode:
         self.dice_left = dice_left
         self.bets_left = bets_left
         self.camel_spots = camel_spots
+        self.die_roll = -1
+        self.die = -1
         self.expected_value = 0
         self.player1 = player1
 
@@ -108,23 +111,32 @@ class GameStateNode:
 
         #roll
 
-        for die in self.dice_left:
-            new_dice_left = cp.deepcopy(self.dice_left)
-            new_dice_left.discard(die)
-            for die_roll in range(1,4): #possible outcomes on the die
-                new_camel_spots = cp.deepcopy(self.camel_spots)
-                new_board_state = cp.deepcopy(self.board_state)
-                #update the position of camel # die
-                for camel in self.board_state[self.camel_spots[die][0]]:
-                    if self.camel_spots[camel][1] >= self.camel_spots[die][1]:
-                        new_board_state[self.camel_spots[camel][0]].remove(camel)
-                        new_camel_spots[camel][0] += die_roll
-                        new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
-                        new_board_state[new_camel_spots[camel][0]].append(camel)
+        dice_list = list(self.dice_left)
+        die_num = -1
+        if len(dice_list) == 1:
+            die_num = 1
+        else:
+            print(len(dice_list))
+            die_num = random.randint(1,len(dice_list))
+        die = dice_list[die_num-1]
+        self.die = die
+        new_dice_left = cp.deepcopy(self.dice_left)
+        new_dice_left.discard(die)
+        die_roll = random.randint(1,3)
+        self.die_roll = die_roll
+        new_camel_spots = cp.deepcopy(self.camel_spots)
+        new_board_state = cp.deepcopy(self.board_state)
+        #update the position of camel # die
+        for camel in self.board_state[self.camel_spots[die][0]]:
+            if self.camel_spots[camel][1] >= self.camel_spots[die][1]:
+                new_board_state[self.camel_spots[camel][0]].remove(camel)
+                new_camel_spots[camel][0] += die_roll
+                new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
+                new_board_state[new_camel_spots[camel][0]].append(camel)
 
 
-                child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
-                children.append((child,"roll"))
+            child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
+            children.append((child,"roll"))
 
         return children
 
@@ -405,18 +417,17 @@ def shuffle_start():
 
     return board_state, camel_spots
 
-
-
 if __name__ == "__main__":
 
+    pass
 
     #starting game configs
-    board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
-    bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
-    bets_made = {}
-    dice_left = set([1,2,3,4,5])
-    camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
-    money = 0
+    # board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
+    # bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
+    # bets_made = {}
+    # dice_left = set([1,2,3,4,5])
+    # camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
+    # money = 0
 
     #randomizing placement, should put this in
     # board_state, camel_spots = shuffle_start()
@@ -456,35 +467,35 @@ if __name__ == "__main__":
     # print(f"Simulating random game: {outcome}, money: {money}")
 
 
-    x_train = []
-    y_train = []
-
-    print("simulating")
-    outcome = [0,0,0]
-
-    for i in range(100):
-
-        print(i)
-        sim = Simulate()
-        board_state, camel_spots = shuffle_start()
-        root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-        sim_x, sim_y, res, money = sim.SimulateGame(root,1,"new_model13")
-
-        x_train.extend(sim_x)
-        y_train.extend(sim_y)
-        if res == 1:
-            outcome[0] +=1
-        elif res == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0]
+    #
+    # for i in range(100):
+    #
+    #     print(i)
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,1,"new_model13")
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
 
     # new_network = Network(x_train,y_train)
     # new_network.compile()
     # new_network.train_model()
     # new_network.save_model("new_model1")
 
-    print(f"Simulating first weighted game: {outcome}")
+    # print(f"Simulating first weighted game: {outcome}")
 
 
     # for sim_indx in range(10,13):
