@@ -6,7 +6,7 @@ import time
 import tensorflow as tf
 import numpy as np
 import os
-import pygame
+#import pygame
 
 class GameStateNode:
     """Create an instance of a game state for Camel up
@@ -97,6 +97,7 @@ class GameStateNode:
 
         children = []
 
+        #good
         for possible_bet in self.bets_left:
             new_bets_left = cp.deepcopy(self.bets_left)
             payout = new_bets_left[possible_bet].pop()
@@ -107,9 +108,9 @@ class GameStateNode:
             children.append((child,(possible_bet,payout)))
 
 
-        #roll
 
         dice_list = list(self.dice_left)
+        # print(dice_list)
         die_num = -1
         if len(dice_list) == 1:
             die_num = 1
@@ -121,15 +122,21 @@ class GameStateNode:
         die_roll = random.randint(1,3)
         new_camel_spots = cp.deepcopy(self.camel_spots)
         new_board_state = cp.deepcopy(self.board_state)
+
         #update the position of camel # die
         for camel in self.board_state[self.camel_spots[die][0]]:
+            # print(f"camel spots: {self.camel_spots}")
+            # print(f"camel: {camel}")
+            # print(f"die: {die}")
+            # print(f"die roll: {die_roll}")
+
             if self.camel_spots[camel][1] >= self.camel_spots[die][1]:
                 new_board_state[self.camel_spots[camel][0]].remove(camel)
                 new_camel_spots[camel][0] += die_roll
                 new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
                 new_board_state[new_camel_spots[camel][0]].append(camel)
-
-
+                # print(f"new board state: {new_board_state}")
+                # print()
         child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
         child.die = die
         child.die_roll = die_roll
@@ -338,6 +345,7 @@ class Simulate:
                     #taking from our model_dict and payouts as input
                     for state in self.model_dict:
                         self.game_tup_x.append(state.key())
+                        #could change to measure our "label"
                         self.game_tup_labels.append(players[0].money) #why do we always append player 0 money??
 
                         self.model_dict[state] = players[0].money
@@ -415,7 +423,6 @@ def shuffle_start():
 
 if __name__ == "__main__":
 
-    pass
 
     #starting game configs
     # board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
@@ -424,13 +431,13 @@ if __name__ == "__main__":
     # dice_left = set([1,2,3,4,5])
     # camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
     # money = 0
-
-    #randomizing placement, should put this in
+    #
+    # # randomizing placement, should put this in
     # board_state, camel_spots = shuffle_start()
-
-    #starting node for all games, currently we dont randomize placement
+    #
+    # #starting node for all games, currently we dont randomize placement
     # root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-
+    #
     # x_train = []
     # y_train = []
     #
