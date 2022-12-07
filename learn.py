@@ -31,7 +31,7 @@ class GameStateNode:
 
     """
 
-    def __init__(self,board_state,dice_left,bets_left,camel_spots, player1 = False):
+    def __init__(self,board_state,dice_left,bets_left,camel_spots, winner_bets_left, loser_bets_left, player1 = False):
         #can likely get rid of the board state, no?
         self.board_state = board_state
         self.dice_left = dice_left
@@ -41,6 +41,9 @@ class GameStateNode:
         self.die = -1
         self.expected_value = 0
         self.player1 = player1
+
+        self.winner_bets_left = winner_bets_left
+        self.loser_bets_left = loser_bets_left
 
     """
     Hashing parameters:
@@ -93,7 +96,7 @@ class GameStateNode:
                 return True,i
         return False,-1
 
-    def expand(self):
+    def expand(self,bets_made = {}, finalWinner = None, finalLoser = None):
 
         children = []
 
@@ -104,7 +107,7 @@ class GameStateNode:
             if len(new_bets_left[possible_bet])==0:
                 del new_bets_left[possible_bet]
 
-            child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots)
+            child = GameStateNode(self.board_state,self.dice_left,new_bets_left,self.camel_spots, self.winner_bets_left, self.loser_bets_left)
             children.append((child,(possible_bet,payout)))
 
 
@@ -137,10 +140,33 @@ class GameStateNode:
                 new_board_state[new_camel_spots[camel][0]].append(camel)
                 # print(f"new board state: {new_board_state}")
                 # print()
-        child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots)
+        child = GameStateNode(new_board_state,new_dice_left,self.bets_left,new_camel_spots,self.winner_bets_left, self.loser_bets_left)
         child.die = die
         child.die_roll = die_roll
         children.append((child,"roll"))
+
+        #if have not bet on winner yet, bet on that jawn
+        if not finalWinner:
+            #loop through all camels, betting on whatever is left
+            for camel in self.winner_bets_left[0]:
+                new_winner_bets_left = cp.deepcopy(self.winner_bets_left)
+                new_winner_bets_left[0].remove(camel)
+                payout = new_winner_bets_left[1].pop(0)
+
+                child = GameStateNode(self.board_state,self.dice_left,self.bets_left,self.camel_spots, new_winner_bets_left, self.loser_bets_left)
+                children.append((child,"betWinner",(camel,payout)))
+        if not finalLoser:
+            #loop through all camels, betting on whatever is left
+            for camel in self.loser_bets_left[0]:
+                new_loser_bets_left = cp.deepcopy(self.loser_bets_left)
+                new_loser_bets_left[0].remove(camel)
+                payout = new_loser_bets_left[1].pop(0)
+
+                child = GameStateNode(self.board_state,self.dice_left,self.bets_left,self.camel_spots, self.winner_bets_left, new_loser_bets_left)
+                children.append((child,"betLoser",(camel,payout)))
+
+
+
 
         return children
 
@@ -162,6 +188,9 @@ class Player:
     def __init__(self):
         self.money = 0
         self.bets_made = {}
+        #final winners and losers
+        self.finalWinner = None
+        self.finalLoser = None
 
     def get_payout(self,state,indx):
         payout = 0
@@ -191,17 +220,23 @@ class RandomPlayer(Player):
         #5: bet on camel 5
 
         move = 0
-        children = gamestate.expand()
+        children = gamestate.expand(self.bets_made,self.finalWinner, self.finalLoser)
 
         if children:
-            move = random.randint(0,len(children)-1) #inclusive
+            move = random.randint(0,len(children)-1) #inclusive, making random moves
         else:
             return None
 
         if children[move][1] == "roll":
             self.money +=1
+        elif children[move][1] == "betWinner":
+             self.finalWinner = children[move][2]
+        elif children[move][1] == "betWinner":
+             self.finalWinner = children[move][2]
         else:
             self.bets_made[children[move][1][0]] = children[move][1][1]
+
+
 
         return children[move][0]
 
@@ -218,7 +253,8 @@ class SmartPlayer(Player):
 
         moveType = 0
         maxChild = 0
-        children = gamestate.expand()
+        children = gamestate.expand(self.bets_made)
+        flag = False
 
         if children:
             child_np_array = np.asarray(np.asarray([np.asarray(child[0].key()) for child in children]))
@@ -233,6 +269,10 @@ class SmartPlayer(Player):
 
         if moveType == "roll":
             self.money +=1
+        elif moveType == "betWinner":
+            self.finalWinner = children[move][2]
+        elif moveType == "betLoser":
+            self.finalLoser = children[move][2]
         else:
             self.bets_made[moveType[0]] = moveType[1]
 
@@ -328,7 +368,7 @@ class Simulate:
                         for p in players:
                             p.money += p.get_payout(tmp_state,front_camel_indx)
 
-                        state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots)
+                        state = GameStateNode(tmp_state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},tmp_state.camel_spots,tmp_state.winner_bets_left,tmp_state.loser_bets_left)
 
                         #making move once the leg has been reset
                         state = player.make_move(state)
@@ -339,6 +379,23 @@ class Simulate:
 
                     for p in players:
                         p.money += p.get_payout(state,complete[1])
+
+                    #payout final bets
+                    #sorting by finish order
+                    camel_order = dict(sorted(state.camel_spots.items(), key=lambda item: item[1]))
+                    final_order = []
+                    for c in camel_order:
+                        final_order.append(c)
+
+                    for player in players:
+                        if player.finalWinner:
+                            if player.finalWinner[0] == final_order[len(final_order)-1]:
+                                player.money += player.finalWinner[1]
+                            #update correct money
+                        if player.finalLoser:
+                            if player.finalLoser[0] == camel_order[0]:
+                                player.money += player.finalLoser[1]
+                            #update correct money
 
                     result = self.get_winner(players)
 
@@ -424,42 +481,45 @@ def shuffle_start():
 if __name__ == "__main__":
 
 
-    #starting game configs
-    # board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
-    # bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
-    # bets_made = {}
-    # dice_left = set([1,2,3,4,5])
-    # camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
-    # money = 0
-    #
-    # # randomizing placement, should put this in
-    # board_state, camel_spots = shuffle_start()
-    #
-    # #starting node for all games, currently we dont randomize placement
-    # root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-    #
-    # x_train = []
-    # y_train = []
-    #
-    # print("simulating")
-    # outcome = [0,0,0] #wins, losses, ties
-    #
-    # for i in range(100): #simulating 1000 games
-    #
-    #     print(f"simulating game #{i}")
-    #     sim = Simulate()
-    #     board_state, camel_spots = shuffle_start()
-    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots)
-    #     sim_x, sim_y, res, money = sim.SimulateGame(root,0)
-    #
-    #     x_train.extend(sim_x)
-    #     y_train.extend(sim_y)
-    #     if res == 1:
-    #         outcome[0] +=1
-    #     elif res == 2:
-    #         outcome[1] +=1
-    #     else:
-    #         outcome[2] +=1
+    # starting game configs
+    board_state = {1:[1,2,3],2:[4,5],3:[],4:[],5:[],6:[],7:[],8:[],9:[],10:[],11:[],12:[],13:[],14:[],15:[],16:[],17:[],18:[],19:[],20:[]}
+    bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
+    bets_made = {}
+    dice_left = set([1,2,3,4,5])
+    camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
+    money = 0
+    winner_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
+    loser_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
+
+
+    # randomizing placement, should put this in
+    board_state, camel_spots = shuffle_start()
+
+    #starting node for all games, currently we dont randomize placement
+    root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left, loser_bets_left)
+
+    x_train = []
+    y_train = []
+
+    print("simulating")
+    outcome = [0,0,0] #wins, losses, ties
+
+    #for i in range(100): #simulating 1000 games
+    for i in range(1):
+        print(f"simulating game #{i}")
+        sim = Simulate()
+        board_state, camel_spots = shuffle_start()
+        root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
+        sim_x, sim_y, res, money = sim.SimulateGame(root,0)
+
+        x_train.extend(sim_x)
+        y_train.extend(sim_y)
+        if res == 1:
+            outcome[0] +=1
+        elif res == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
     #
     # # new_network = Network(x_train,y_train)
     # # new_network.compile()
