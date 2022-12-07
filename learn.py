@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque,defaultdict
 import copy as cp
 import random
 import pickle
@@ -88,7 +88,7 @@ class GameStateNode:
 
     def is_complete(self):
         #more to figure out with this
-        for i in range(16,20):
+        for i in range(17,20):
             if len(self.board_state[i])>0:
                 return True,i
         return False,-1
@@ -161,7 +161,7 @@ class Player:
 
     def __init__(self):
         self.money = 0
-        self.bets_made = {}
+        self.bets_made = defaultdict(list)
 
     def get_payout(self,state,indx):
         payout = 0
@@ -422,6 +422,8 @@ def shuffle_start():
     return board_state, camel_spots
 
 if __name__ == "__main__":
+
+    pass
 
 
     #starting game configs
