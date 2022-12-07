@@ -93,7 +93,7 @@ class GameStateNode:
                 return True,i
         return False,-1
 
-    def expand(self,bets_made = {}):
+    def expand(self):
 
         children = []
 
@@ -184,7 +184,7 @@ class RandomPlayer(Player):
         #5: bet on camel 5
 
         move = 0
-        children = gamestate.expand(self.bets_made)
+        children = gamestate.expand()
 
         if children:
             move = random.randint(0,len(children)-1) #inclusive
@@ -211,8 +211,7 @@ class SmartPlayer(Player):
 
         moveType = 0
         maxChild = 0
-        children = gamestate.expand(self.bets_made)
-        flag = False
+        children = gamestate.expand()
 
         if children:
             child_np_array = np.asarray(np.asarray([np.asarray(child[0].key()) for child in children]))
