@@ -42,8 +42,10 @@ class GameStateNode:
         self.expected_value = 0
         self.player1 = player1
 
+
         self.winner_bets_left = winner_bets_left
         self.loser_bets_left = loser_bets_left
+
 
     """
     Hashing parameters:
@@ -148,24 +150,19 @@ class GameStateNode:
         #if have not bet on winner yet, bet on that jawn
         if not finalWinner:
             #loop through all camels, betting on whatever is left
-            for camel in self.winner_bets_left[0]:
+            for camel in self.camel_spots.keys(): #loop through camels
                 new_winner_bets_left = cp.deepcopy(self.winner_bets_left)
-                new_winner_bets_left[0].remove(camel)
-                payout = new_winner_bets_left[1].pop(0)
-
+                payout = new_winner_bets_left.pop(0) #pop the max value
                 child = GameStateNode(self.board_state,self.dice_left,self.bets_left,self.camel_spots, new_winner_bets_left, self.loser_bets_left)
                 children.append((child,"betWinner",(camel,payout)))
+
         if not finalLoser:
             #loop through all camels, betting on whatever is left
-            for camel in self.loser_bets_left[0]:
+            for camel in self.camel_spots.keys():
                 new_loser_bets_left = cp.deepcopy(self.loser_bets_left)
-                new_loser_bets_left[0].remove(camel)
-                payout = new_loser_bets_left[1].pop(0)
-
+                payout = new_loser_bets_left.pop(0)
                 child = GameStateNode(self.board_state,self.dice_left,self.bets_left,self.camel_spots, self.winner_bets_left, new_loser_bets_left)
                 children.append((child,"betLoser",(camel,payout)))
-
-
 
 
         return children
@@ -197,6 +194,7 @@ class Player:
         tmp_state = cp.deepcopy(state)
         camel = tmp_state.board_state[indx].pop()
         if camel in self.bets_made:
+            #payout = self.bets_made[camel][1]
             payout = self.bets_made[camel][-1]
             del self.bets_made[camel]
         return payout
@@ -231,8 +229,8 @@ class RandomPlayer(Player):
             self.money +=1
         elif children[move][1] == "betWinner":
              self.finalWinner = children[move][2]
-        elif children[move][1] == "betWinner":
-             self.finalWinner = children[move][2]
+        elif children[move][1] == "betLoser":
+             self.finalLoser = children[move][2]
         else:
             self.bets_made[children[move][1][0]] = children[move][1][1]
 
@@ -490,8 +488,8 @@ if __name__ == "__main__":
     dice_left = set([1,2,3,4,5])
     camel_spots = {1:[1,0],2:[1,1],3:[1,2],4:[2,0],5:[2,1]} #arbitrarily selecting starting locations for our camels
     money = 0
-    winner_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
-    loser_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
+    winner_bets_left = [8,5,3,2,1]
+    loser_bets_left = [8,5,3,2,1]
 
 
     # randomizing placement, should put this in
