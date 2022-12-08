@@ -6,9 +6,11 @@ import copy as cp
 
 board_state, camel_spots = shuffle_start()
 bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
+winner_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
+loser_bets_left = [[1,2,3,4,5],[8,5,3,2,1]]
 dice_left = set([1,2,3,4,5])
 
-state = GameStateNode(board_state,dice_left,bets_left,camel_spots)
+state = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left, loser_bets_left)
 
 pygame.init()
 screen_width  = 800
@@ -79,7 +81,41 @@ green_betting_card = pygame.Rect(green_betting_card_x,betting_card_y,betting_car
 yellow_betting_card = pygame.Rect(yellow_betting_card_x,betting_card_y,betting_card_w,betting_card_h)
 white_betting_card = pygame.Rect(white_betting_card_x,betting_card_y,betting_card_w,betting_card_h)
 
+red_total_Wx = 1.8*screen_width//5
+red_total_Lx = 1.8*screen_width//5
 
+blue_total_Wx = 2.2*screen_width//5
+blue_total_Lx = 2.2*screen_width//5
+
+yellow_total_Wx = 2.6*screen_width//5
+yellow_total_Lx = 2.6*screen_width//5
+
+white_total_Wx = 3*screen_width//5
+white_total_Lx = 3*screen_width//5
+
+green_total_Wx = 3.4*screen_width//5
+green_total_Lx = 3.4*screen_width//5
+
+total_Wy = screen_height//3.1
+total_Ly = screen_height//2.7
+
+total_w = 50
+total_h = 25
+
+total_red_W = pygame.Rect(red_total_Wx,total_Wy,total_w,total_h)
+total_red_L = pygame.Rect(red_total_Lx,total_Ly,total_w,total_h)
+
+total_blue_W = pygame.Rect(blue_total_Wx,total_Wy,total_w,total_h)
+total_blue_L = pygame.Rect(blue_total_Lx,total_Ly,total_w,total_h)
+
+total_green_W = pygame.Rect(green_total_Wx,total_Wy,total_w,total_h)
+total_green_L = pygame.Rect(green_total_Lx,total_Ly,total_w,total_h)
+
+total_yellow_W = pygame.Rect(yellow_total_Wx,total_Wy,total_w,total_h)
+total_yellow_L = pygame.Rect(yellow_total_Lx,total_Ly,total_w,total_h)
+
+total_white_W = pygame.Rect(white_total_Wx,total_Wy,total_w,total_h)
+total_white_L = pygame.Rect(white_total_Lx,total_Ly,total_w,total_h)
 
 smallfont = pygame.font.SysFont('bahnschrift',35)
 roll_button_text = smallfont.render('DICE' , True , (231,231,231))
@@ -93,7 +129,9 @@ def draw_board(screen,screen_width,screen_height,display_red_die,display_blue_di
                roll_button_w,roll_button_h,roll_button,smallfont,roll_button_text,
                red_betting_card_x,blue_betting_card_x,yellow_betting_card_x,green_betting_card_x,
                white_betting_card_x,betting_card_y,betting_card_w,betting_card_h,red_betting_card,
-               blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card):
+               blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card,
+               total_red_W,total_red_L,total_blue_W,total_blue_L,total_green_W,total_green_L,
+               total_white_W,total_white_L,total_yellow_W,total_yellow_L):
 
     screen.fill((242,205,107))
 
@@ -277,6 +315,75 @@ def draw_board(screen,screen_width,screen_height,display_red_die,display_blue_di
     leg_bets_text = smallfont.render("leg bets:" , True , (0,0,0))
     screen.blit(leg_bets_text,(1.1*screen_width//5,screen_height//4))
 
+    total_bets_text = smallfont.render("ovr. bets:" , True , (0,0,0))
+    screen.blit(total_bets_text,(1.1*screen_width//5,screen_height//3))
+
+    W_txt = smallfont.render("W" , True , (0,0,0))
+    L_txt = smallfont.render("L" , True , (0,0,0))
+
+    pygame.draw.rect(screen,color_dict["red"],total_red_W)
+    screen.blit(W_txt,(red_total_Wx + total_w//3,total_Wy))
+    pygame.draw.rect(screen,color_dict["red"],total_red_L)
+    screen.blit(L_txt,(red_total_Lx + total_w//3,total_Ly))
+
+    pygame.draw.rect(screen,color_dict["white"],total_white_W)
+    screen.blit(W_txt,(white_total_Wx + total_w//3,total_Wy))
+    pygame.draw.rect(screen,color_dict["white"],total_white_L)
+    screen.blit(L_txt,(white_total_Lx + total_w//3,total_Ly))
+
+    pygame.draw.rect(screen,color_dict["blue"],total_blue_W)
+    screen.blit(W_txt,(blue_total_Wx + total_w//3,total_Wy))
+    pygame.draw.rect(screen,color_dict["blue"],total_blue_L)
+    screen.blit(L_txt,(blue_total_Lx + total_w//3,total_Ly))
+
+    pygame.draw.rect(screen,color_dict["green"],total_green_W)
+    screen.blit(W_txt,(green_total_Wx + total_w//3,total_Wy))
+    pygame.draw.rect(screen,color_dict["green"],total_green_L)
+    screen.blit(L_txt,(green_total_Lx + total_w//3,total_Ly))
+
+    pygame.draw.rect(screen,color_dict["yellow"],total_yellow_W)
+    screen.blit(W_txt,(yellow_total_Wx + total_w//3,total_Wy))
+    pygame.draw.rect(screen,color_dict["yellow"],total_yellow_L)
+    screen.blit(L_txt,(yellow_total_Lx + total_w//3,total_Ly))
+
+    p1_bets_text = smallfont.render("p1 bets", True , (0,0,0))
+    screen.blit(p1_bets_text,(1.3*screen_width//5,screen_height//2.4))
+
+    p2_bets_text = smallfont.render("p2 bets", True , (0,0,0))
+    screen.blit(p2_bets_text,(3.1*screen_width//5,screen_height//2.4))
+
+    p1_red_bets_made = smallfont.render(f"{p1.bets_made[which_camel['red']]}", True , color_dict["red"])
+    screen.blit(p1_red_bets_made,(screen_width//4.2,screen_height//2.2))
+
+    p1_blue_bets_made = smallfont.render(f"{p1.bets_made[which_camel['blue']]}", True , color_dict["blue"])
+    screen.blit(p1_blue_bets_made,(screen_width//4.2,screen_height//2.05))
+
+    p1_green_bets_made = smallfont.render(f"{p1.bets_made[which_camel['green']]}", True , color_dict["green"])
+    screen.blit(p1_green_bets_made,(screen_width//4.2,screen_height//1.92))
+
+    p1_yellow_bets_made = smallfont.render(f"{p1.bets_made[which_camel['yellow']]}", True , color_dict["yellow"])
+    screen.blit(p1_yellow_bets_made,(screen_width//4.2,screen_height//1.8))
+
+    p1_white_bets_made = smallfont.render(f"{p1.bets_made[which_camel['white']]}", True , color_dict["white"])
+    screen.blit(p1_white_bets_made,(screen_width//4.2,screen_height//1.7))
+
+    p2_red_bets_made = smallfont.render(f"{p2.bets_made[which_camel['red']]}", True , color_dict["red"])
+    screen.blit(p2_red_bets_made,(2.5*screen_width//4.2,screen_height//2.2))
+
+    p2_blue_bets_made = smallfont.render(f"{p2.bets_made[which_camel['blue']]}", True , color_dict["blue"])
+    screen.blit(p2_blue_bets_made,(2.5*screen_width//4.2,screen_height//2.05))
+
+    p2_green_bets_made = smallfont.render(f"{p2.bets_made[which_camel['green']]}", True , color_dict["green"])
+    screen.blit(p2_green_bets_made,(2.5*screen_width//4.2,screen_height//1.92))
+
+    p2_yellow_bets_made = smallfont.render(f"{p2.bets_made[which_camel['yellow']]}", True , color_dict["yellow"])
+    screen.blit(p2_yellow_bets_made,(2.5*screen_width//4.2,screen_height//1.8))
+
+    p2_white_bets_made = smallfont.render(f"{p2.bets_made[which_camel['white']]}", True , color_dict["white"])
+    screen.blit(p2_white_bets_made,(2.5*screen_width//4.2,screen_height//1.7))
+
+
+
 
 while True:
 
@@ -287,7 +394,9 @@ while True:
                roll_button_w,roll_button_h,roll_button,smallfont,roll_button_text,
                red_betting_card_x,blue_betting_card_x,yellow_betting_card_x,green_betting_card_x,
                white_betting_card_x,betting_card_y,betting_card_w,betting_card_h,red_betting_card,
-               blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card)
+               blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card,
+               total_red_W,total_red_L,total_blue_W,total_blue_L,total_green_W,total_green_L,
+               total_white_W,total_white_L,total_yellow_W,total_yellow_L)
 
     complete = state.is_complete() #check if game is complete
     if not complete[0]:
@@ -331,7 +440,7 @@ while True:
                             new_board_state[new_camel_spots[camel][0]].append(camel)
 
 
-                    state = GameStateNode(new_board_state,new_dice_left,state.bets_left,new_camel_spots)
+                    state = GameStateNode(new_board_state,new_dice_left,state.bets_left, new_camel_spots, winner_bets_left, loser_bets_left)
 
                     state.die = die
                     state.die_roll = die_roll
@@ -357,9 +466,178 @@ while True:
 
                         p1.bets_made[which_camel["red"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
 
                         p1_turn = False
+
+            if which_camel["blue"] in state.bets_left:
+
+                if (blue_betting_card_x < mouse[0] < blue_betting_card_x + betting_card_w) and (betting_card_y < mouse[1] < betting_card_y + betting_card_h):
+                    pygame.draw.rect(screen,(134,100,68),blue_betting_card)
+                    blue_betting_number = state.bets_left[which_camel["blue"]][-1]
+                    blue_card_text = smallfont.render(str(blue_betting_number) , True , (0,0,0))
+                    screen.blit(blue_card_text,(blue_betting_card_x + betting_card_w//3,betting_card_y+ betting_card_h//3))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+
+                        new_bets_left = cp.deepcopy(state.bets_left)
+                        payout = new_bets_left[which_camel["blue"]].pop()
+                        if len(new_bets_left[which_camel["blue"]])==0:
+                            del new_bets_left[which_camel["blue"]]
+
+                        p1.bets_made[which_camel["blue"]].append(payout)
+
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+
+                        p1_turn = False
+
+            if which_camel["green"] in state.bets_left:
+
+                if (green_betting_card_x < mouse[0] < green_betting_card_x + betting_card_w) and (betting_card_y < mouse[1] < betting_card_y + betting_card_h):
+                    pygame.draw.rect(screen,(134,100,68),green_betting_card)
+                    green_betting_number = state.bets_left[which_camel["green"]][-1]
+                    green_card_text = smallfont.render(str(green_betting_number) , True , (0,0,0))
+                    screen.blit(green_card_text,(green_betting_card_x + betting_card_w//3,betting_card_y+ betting_card_h//3))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+
+                        new_bets_left = cp.deepcopy(state.bets_left)
+                        payout = new_bets_left[which_camel["green"]].pop()
+                        if len(new_bets_left[which_camel["green"]])==0:
+                            del new_bets_left[which_camel["green"]]
+
+                        p1.bets_made[which_camel["green"]].append(payout)
+
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+
+                        p1_turn = False
+
+            if which_camel["white"] in state.bets_left:
+
+                if (white_betting_card_x < mouse[0] < white_betting_card_x + betting_card_w) and (betting_card_y < mouse[1] < betting_card_y + betting_card_h):
+                    pygame.draw.rect(screen,(134,100,68),white_betting_card)
+                    white_betting_number = state.bets_left[which_camel["white"]][-1]
+                    white_card_text = smallfont.render(str(white_betting_number) , True , (0,0,0))
+                    screen.blit(white_card_text,(white_betting_card_x + betting_card_w//3,betting_card_y+ betting_card_h//3))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+
+                        new_bets_left = cp.deepcopy(state.bets_left)
+                        payout = new_bets_left[which_camel["white"]].pop()
+                        if len(new_bets_left[which_camel["white"]])==0:
+                            del new_bets_left[which_camel["white"]]
+
+                        p1.bets_made[which_camel["white"]].append(payout)
+
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+
+                        p1_turn = False
+
+            if which_camel["yellow"] in state.bets_left:
+
+                if (yellow_betting_card_x < mouse[0] < yellow_betting_card_x + betting_card_w) and (betting_card_y < mouse[1] < betting_card_y + betting_card_h):
+                    pygame.draw.rect(screen,(134,100,68),yellow_betting_card)
+                    yellow_betting_number = state.bets_left[which_camel["yellow"]][-1]
+                    yellow_card_text = smallfont.render(str(yellow_betting_number) , True , (0,0,0))
+                    screen.blit(yellow_card_text,(yellow_betting_card_x + betting_card_w//3,betting_card_y+ betting_card_h//3))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+
+                        new_bets_left = cp.deepcopy(state.bets_left)
+                        payout = new_bets_left[which_camel["yellow"]].pop()
+                        if len(new_bets_left[which_camel["yellow"]])==0:
+                            del new_bets_left[which_camel["yellow"]]
+
+                        p1.bets_made[which_camel["yellow"]].append(payout)
+
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+
+                        p1_turn = False
+
+            if not p1.finalWinner:
+
+                if (red_total_Wx < mouse[0] < red_total_Wx + total_w) and (total_Wy < mouse[1] < total_Wy + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_red_W)
+                    W_txt = smallfont.render("W" , True , (0,0,0))
+                    screen.blit(W_txt,(red_total_Wx + total_w//3,total_Wy))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (yellow_total_Wx < mouse[0] < yellow_total_Wx + total_w) and (total_Wy < mouse[1] < total_Wy + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_yellow_W)
+                    W_txt = smallfont.render("W" , True , (0,0,0))
+                    screen.blit(W_txt,(yellow_total_Wx + total_w//3,total_Wy))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (blue_total_Wx < mouse[0] < blue_total_Wx + total_w) and (total_Wy < mouse[1] < total_Wy + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_blue_W)
+                    W_txt = smallfont.render("W" , True , (0,0,0))
+                    screen.blit(W_txt,(blue_total_Wx + total_w//3,total_Wy))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (green_total_Wx < mouse[0] < green_total_Wx + total_w) and (total_Wy < mouse[1] < total_Wy + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_green_W)
+                    W_txt = smallfont.render("W" , True , (0,0,0))
+                    screen.blit(W_txt,(green_total_Wx + total_w//3,total_Wy))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (white_total_Wx < mouse[0] < white_total_Wx + total_w) and (total_Wy < mouse[1] < total_Wy + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_white_W)
+                    W_txt = smallfont.render("W" , True , (0,0,0))
+                    screen.blit(W_txt,(white_total_Wx + total_w//3,total_Wy))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+            if not p1.finalLoser:
+
+                if (red_total_Lx < mouse[0] < red_total_Lx + total_w) and (total_Ly < mouse[1] < total_Ly + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_red_L)
+                    L_txt = smallfont.render("L" , True , (0,0,0))
+                    screen.blit(L_txt,(red_total_Lx + total_w//3,total_Ly))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (yellow_total_Lx < mouse[0] < yellow_total_Lx + total_w) and (total_Ly < mouse[1] < total_Ly + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_yellow_L)
+                    L_txt = smallfont.render("L" , True , (0,0,0))
+                    screen.blit(L_txt,(yellow_total_Lx + total_w//3,total_Ly))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (blue_total_Lx < mouse[0] < blue_total_Lx + total_w) and (total_Ly < mouse[1] < total_Ly + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_blue_L)
+                    L_txt = smallfont.render("L" , True , (0,0,0))
+                    screen.blit(L_txt,(blue_total_Lx + total_w//3,total_Ly))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (green_total_Lx < mouse[0] < green_total_Lx + total_w) and (total_Ly < mouse[1] < total_Ly + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_green_L)
+                    L_txt = smallfont.render("L" , True , (0,0,0))
+                    screen.blit(L_txt,(green_total_Lx + total_w//3,total_Ly))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
+                elif (white_total_Lx < mouse[0] < white_total_Lx + total_w) and (total_Ly < mouse[1] < total_Ly + total_h):
+                    pygame.draw.rect(screen,(134,100,68),total_white_L)
+                    L_txt = smallfont.render("L" , True , (0,0,0))
+                    screen.blit(L_txt,(white_total_Lx + total_w//3,total_Ly))
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pass
+
 
             if event.type == pygame.KEYDOWN:
                 break
@@ -400,10 +678,22 @@ while True:
                 if len(state.board_state[i])>0:
                     front_camel_indx = i
                     break
+
+
+            '''
+
+            FIX. temporary bandaid
+
+            also need to make it so bets made reset after every leg
+
+
+            '''
+            print(p1.bets_made)
             for p in players:
                 p.money += p.get_payout(state,front_camel_indx)
 
-            state = GameStateNode(state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},state.camel_spots)
+
+            state = GameStateNode(state.board_state,set([1,2,3,4,5]),{1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]},state.camel_spots,winner_bets_left,loser_bets_left)
 
             draw_board(screen,screen_width,screen_height,display_red_die,display_blue_die,
                        display_green_die, display_white_die,display_yellow_die,red_die_number,
@@ -412,7 +702,9 @@ while True:
                        roll_button_w,roll_button_h,roll_button,smallfont,roll_button_text,
                        red_betting_card_x,blue_betting_card_x,yellow_betting_card_x,green_betting_card_x,
                        white_betting_card_x,betting_card_y,betting_card_w,betting_card_h,red_betting_card,
-                       blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card)
+                       blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card,
+                       total_red_W,total_red_L,total_blue_W,total_blue_L,total_green_W,total_green_L,
+                       total_white_W,total_white_L,total_yellow_W,total_yellow_L)
 
 
             pygame.display.update()
@@ -438,7 +730,9 @@ while True:
                        roll_button_w,roll_button_h,roll_button,smallfont,roll_button_text,
                        red_betting_card_x,blue_betting_card_x,yellow_betting_card_x,green_betting_card_x,
                        white_betting_card_x,betting_card_y,betting_card_w,betting_card_h,red_betting_card,
-                       blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card)
+                       blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card,
+                       total_red_W,total_red_L,total_blue_W,total_blue_L,total_green_W,total_green_L,
+                       total_white_W,total_white_L,total_yellow_W,total_yellow_L)
 
 
             pygame.display.update()
@@ -455,7 +749,9 @@ while True:
                    roll_button_w,roll_button_h,roll_button,smallfont,roll_button_text,
                    red_betting_card_x,blue_betting_card_x,yellow_betting_card_x,green_betting_card_x,
                    white_betting_card_x,betting_card_y,betting_card_w,betting_card_h,red_betting_card,
-                   blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card)
+                   blue_betting_card,yellow_betting_card,green_betting_card,white_betting_card,
+                   total_red_W,total_red_L,total_blue_W,total_blue_L,total_green_W,total_green_L,
+                   total_white_W,total_white_L,total_yellow_W,total_yellow_L)
 
 
         pygame.display.update()

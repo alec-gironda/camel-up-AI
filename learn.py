@@ -197,7 +197,7 @@ class Player:
         tmp_state = cp.deepcopy(state)
         camel = tmp_state.board_state[indx].pop()
         if camel in self.bets_made:
-            payout = self.bets_made[camel]
+            payout = self.bets_made[camel][-1]
             del self.bets_made[camel]
         return payout
 
@@ -274,7 +274,7 @@ class SmartPlayer(Player):
         elif moveType == "betLoser":
             self.finalLoser = children[move][2]
         else:
-            self.bets_made[moveType[0]] = moveType[1]
+            self.bets_made[moveType[0]].append(moveType[1])
 
         # print(maxChild.board_state)
         return maxChild
