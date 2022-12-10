@@ -199,6 +199,25 @@ class Player:
             del self.bets_made[camel]
         return payout
 
+    def get_final_payout(self,state,indx):
+
+        self.money += self.get_payout(state,indx)
+
+        camel_order = dict(sorted(state.camel_spots.items(), key=lambda item: item[1]))
+        final_order = []
+        for c in camel_order:
+            final_order.append(c)
+
+            if self.finalWinner:
+                if self.finalWinner[0] == final_order[len(final_order)-1]:
+                    self.money += self.finalWinner[1]
+                #update correct money
+            if self.finalLoser:
+                if self.finalLoser[0] == camel_order[0]:
+                    self.money += self.finalLoser[1]
+        return
+
+
 class RandomPlayer(Player):
 
     """
@@ -380,19 +399,7 @@ class Simulate:
 
                     #payout final bets
                     #sorting by finish order
-                    camel_order = dict(sorted(state.camel_spots.items(), key=lambda item: item[1]))
-                    final_order = []
-                    for c in camel_order:
-                        final_order.append(c)
 
-                    for player in players:
-                        if player.finalWinner:
-                            if player.finalWinner[0] == final_order[len(final_order)-1]:
-                                player.money += player.finalWinner[1]
-                            #update correct money
-                        if player.finalLoser:
-                            if player.finalLoser[0] == camel_order[0]:
-                                player.money += player.finalLoser[1]
                             #update correct money
 
                     result = self.get_winner(players)
