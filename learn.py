@@ -40,9 +40,6 @@ class GameStateNode:
         self.camel_spots = camel_spots
         self.die_roll = -1
         self.die = -1
-        self.expected_value = 0
-        self.player1 = player1
-
 
         self.winner_bets_left = winner_bets_left
         self.loser_bets_left = loser_bets_left
@@ -286,9 +283,12 @@ class MaxPlayer(Player):
 
             for indx, die in enumerate(dice):
 
-                for camel in state.board_state[state.camel_spots[die][0]]:
+                tmp_camel_spots = cp.deepcopy(new_camel_spots)
+                tmp_board_state = cp.deepcopy(new_board_state)
 
-                    if state.camel_spots[camel][1] >= state.camel_spots[die][1]:
+                for camel in tmp_board_state[tmp_camel_spots[die][0]]:
+
+                    if tmp_camel_spots[camel][1] >= tmp_camel_spots[die][1]:
                         new_board_state[new_camel_spots[camel][0]].remove(camel)
                         new_camel_spots[camel][0] += nums[indx]
                         new_camel_spots[camel][1] = len(new_board_state[new_camel_spots[camel][0]])
@@ -301,17 +301,16 @@ class MaxPlayer(Player):
                     front_camel_indx = i
                     break
 
-            # print(dice,nums)
-            # print(new_board_state)
-
 
             camel = new_board_state[front_camel_indx].pop()
+
             wins[camel-1] += 1
 
         probs = [win/len(dice_num_tuples) for win in wins]
-        print(wins)
 
-        return np.argsort(probs),sorted(probs)
+        EVs = [probs[i-1] * state.bets_left[i][-1] if i in state.bets_left else 0 for i in range(1,6)]
+
+        return np.argsort(EVs),sorted(EVs)
 
     def make_move(self,gamestate):
 
@@ -340,18 +339,29 @@ class MaxPlayer(Player):
 
         move = -1
 
-        if bet_found and bet_probs[last_rem_indx]>0:
+        if bet_found and bet_probs[last_rem_indx]>1:
             children.append(last_removed)
             self.bets_made[children[move][1][0]].append(children[move][1][1])
         else:
-            move = random.randint(0,len(children)-1)
 
-            if children[move][1] == "roll":
-                self.money +=1
-            elif children[move][1] == "betWinner":
-                 self.finalWinner = children[move][2]
-            elif children[move][1] == "betLoser":
-                 self.finalLoser = children[move][2]
+            take_bet = random.randint(1,10)
+            if take_bet == 1:
+
+                move = random.randint(0,len(children)-1)
+
+                if children[move][1] == "roll":
+                    self.money +=1
+                elif children[move][1] == "betWinner":
+                     self.finalWinner = children[move][2]
+                elif children[move][1] == "betLoser":
+                     self.finalLoser = children[move][2]
+
+            else:
+                for child in children:
+                    if child[1] == "roll":
+                        return child[0]
+
+
 
         return children[move][0]
 
@@ -371,8 +381,6 @@ class SmartPlayer(MaxPlayer):
             return None
 
         best_bets, bet_probs = self.get_highest_prob_bets(gamestate)
-        print(best_bets)
-        print(bet_probs)
 
         #if going to take a bet, make sure we take the right one
 
@@ -392,7 +400,7 @@ class SmartPlayer(MaxPlayer):
 
         move = -1
 
-        if bet_found and bet_probs[last_rem_indx]>0:
+        if bet_found and bet_probs[last_rem_indx]>1:
             children.append(last_removed)
             self.bets_made[children[move][1][0]].append(children[move][1][1])
         else:
@@ -466,11 +474,14 @@ class Simulate:
         player2 = None
 
         #picking game type
-        if game_type == 0: #random vs random
+        if game_type == -1: #max vs random
+            player1 = RandomPlayer()
+            player2 = RandomPlayer()
+        elif game_type == 0: #max vs random
             player1 = MaxPlayer(perms)
             player2 = RandomPlayer()
         elif game_type == 1: #smart vs random
-            player1 = SmartPlayer(network1)
+            player1 = SmartPlayer(network1,perms)
             player2 = RandomPlayer()
         else: #smart vs smart
             player1 = SmartPlayer(network1)
@@ -689,53 +700,22 @@ if __name__ == "__main__":
     # root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left, loser_bets_left)
 
 
-    #
-    x_train = []
-    y_train = []
 
-    print("simulating")
-    outcome = [0,0,0] #wins, losses, ties
-
-    perms = set_perms()
-
-    #simulating 1000 games
-    for i in range(10000):
-        print(f"simulating game #{i}")
-        sim = Simulate()
-        board_state, camel_spots = shuffle_start()
-        root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
-        sim_x, sim_y, res, money = sim.SimulateGame(root,0,perms = perms)
-
-        x_train.extend(sim_x)
-        y_train.extend(sim_y)
-        if res == 1:
-            outcome[0] +=1
-        elif res == 2:
-            outcome[1] +=1
-        else:
-            outcome[2] +=1
-
-    new_network = Network(x_train,y_train)
-    new_network.compile()
-    new_network.train_model()
-    new_network.save_model("new_model0")
-
-    print(f"Simulating random game: {outcome}, money: {money}")
-    #
-    #
     # x_train = []
     # y_train = []
     #
     # print("simulating")
-    # outcome = [0,0,0]
-    #
-    # for i in range(1000):
-    #
-    #     print(i)
+    # outcome = [0,0,0] #wins, losses, ties
+
+    perms = set_perms()
+
+    #simulating 100 games
+    # for i in range(100):
+    #     print(f"simulating game #{i}")
     #     sim = Simulate()
     #     board_state, camel_spots = shuffle_start()
     #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
-    #     sim_x, sim_y, res, money = sim.SimulateGame(root,1,"new_model0")
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,0,perms = perms)
     #
     #     x_train.extend(sim_x)
     #     y_train.extend(sim_y)
@@ -749,9 +729,70 @@ if __name__ == "__main__":
     # new_network = Network(x_train,y_train)
     # new_network.compile()
     # new_network.train_model()
-    # new_network.save_model("new_model1")
+    # new_network.save_model("new_model0")
+    # #
+    # print(f"Simulating random game: {outcome}, money: {money}")
     #
-    # print(f"Simulating first weighted game: {outcome}")
+    #
+    x_train = []
+    y_train = []
+
+    print("simulating")
+    outcome = [0,0,0]
+    #
+    for i in range(100):
+
+        print(i)
+        sim = Simulate()
+        board_state, camel_spots = shuffle_start()
+        root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
+        sim_x, sim_y, res, money = sim.SimulateGame(root,1,network1 ="new_model0",perms = perms)
+
+        x_train.extend(sim_x)
+        y_train.extend(sim_y)
+        if res == 1:
+            outcome[0] +=1
+        elif res == 2:
+            outcome[1] +=1
+        else:
+            outcome[2] +=1
+
+    new_network = Network(x_train,y_train)
+    new_network.compile()
+    new_network.train_model()
+    new_network.save_model("new_model1")
+
+    print(f"Simulating first weighted game: {outcome}")
+
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0]
+    #
+    # for i in range(100):
+    #
+    #     print(i)
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,-1)
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+
+    # new_network = Network(x_train,y_train)
+    # new_network.compile()
+    # new_network.train_model()
+    # new_network.save_model("new_model1")
+
+    # print(f"Simulating random game: {outcome}")
 
 
     # for sim_indx in range(10,13):

@@ -33,7 +33,7 @@ p1_turn = True
 
 p1 = Player()
 perms = set_perms()
-p2 = SmartPlayer("./new_model0",perms)
+p2 = MaxPlayer(perms)
 # p2 = MaxPlayer(perms)
 
 players = [p1,p2]
@@ -626,7 +626,7 @@ while True:
                     screen.blit(L_txt,(red_total_Lx + total_w//3,total_Ly))
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        payout = state.winner_bets_left.pop(0)
+                        payout = state.loser_bets_left.pop(0)
                         p1.finalLoser = (which_camel["red"],payout)
                         state = GameStateNode(state.board_state,state.dice_left,state.bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
@@ -638,7 +638,7 @@ while True:
                     screen.blit(L_txt,(yellow_total_Lx + total_w//3,total_Ly))
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        payout = state.winner_bets_left.pop(0)
+                        payout = state.loser_bets_left.pop(0)
                         p1.finalLoser = (which_camel["yellow"],payout)
                         state = GameStateNode(state.board_state,state.dice_left,state.bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
@@ -650,7 +650,7 @@ while True:
                     screen.blit(L_txt,(blue_total_Lx + total_w//3,total_Ly))
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        payout = state.winner_bets_left.pop(0)
+                        payout = state.loser_bets_left.pop(0)
                         p1.finalLoser = (which_camel["blue"],payout)
                         state = GameStateNode(state.board_state,state.dice_left,state.bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
@@ -662,7 +662,7 @@ while True:
                     screen.blit(L_txt,(green_total_Lx + total_w//3,total_Ly))
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        payout = state.winner_bets_left.pop(0)
+                        payout = state.loser_bets_left.pop(0)
                         p1.finalLoser = (which_camel["green"],payout)
                         state = GameStateNode(state.board_state,state.dice_left,state.bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
@@ -674,7 +674,7 @@ while True:
                     screen.blit(L_txt,(white_total_Lx + total_w//3,total_Ly))
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        payout = state.winner_bets_left.pop(0)
+                        payout = state.loser_bets_left.pop(0)
                         p1.finalLoser = (which_camel["white"],payout)
                         state = GameStateNode(state.board_state,state.dice_left,state.bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
@@ -687,7 +687,7 @@ while True:
                 print(p2.finalLoser, "loser")
 
 
-        elif time.time()-start > 1:
+        elif time.time()-start > 0.01:
             state = p2.make_move(state)
 
             p1_turn = True
@@ -801,7 +801,7 @@ while True:
         print(f"player 2 made {p2.money} coins")
         print(state.camel_spots)
 
-        pygame.time.wait(5000)
+        pygame.time.wait(10000)
 
         break
 
