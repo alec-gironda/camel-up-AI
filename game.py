@@ -442,7 +442,7 @@ while True:
                             new_board_state[new_camel_spots[camel][0]].append(camel)
 
 
-                    state = GameStateNode(new_board_state,new_dice_left,state.bets_left, new_camel_spots, winner_bets_left, loser_bets_left)
+                    state = GameStateNode(new_board_state,new_dice_left,state.bets_left, new_camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                     state.die = die
                     state.die_roll = die_roll
@@ -468,7 +468,7 @@ while True:
 
                         p1.bets_made[which_camel["red"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                         p1_turn = False
 
@@ -489,7 +489,7 @@ while True:
 
                         p1.bets_made[which_camel["blue"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                         p1_turn = False
 
@@ -510,7 +510,7 @@ while True:
 
                         p1.bets_made[which_camel["green"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                         p1_turn = False
 
@@ -531,7 +531,7 @@ while True:
 
                         p1.bets_made[which_camel["white"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                         p1_turn = False
 
@@ -552,7 +552,7 @@ while True:
 
                         p1.bets_made[which_camel["yellow"]].append(payout)
 
-                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, winner_bets_left, loser_bets_left)
+                        state = GameStateNode(state.board_state,state.dice_left,new_bets_left,state.camel_spots, state.winner_bets_left, state.loser_bets_left)
 
                         p1_turn = False
 
@@ -681,6 +681,9 @@ while True:
                         p1_turn = False
 
             if event.type == pygame.KEYDOWN:
+                print(state.winner_bets_left,"win")
+                print(state.loser_bets_left,"lose")
+                print("\n")
                 print(p1.finalWinner, "winner")
                 print(p2.finalWinner, "winner")
                 print(p1.finalLoser, "loser")

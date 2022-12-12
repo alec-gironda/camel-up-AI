@@ -212,18 +212,26 @@ class Player:
 
         self.money += self.get_payout(state,indx)
 
-        camel_order = dict(sorted(state.camel_spots.items(), key=lambda item: item[1]))
-        final_order = []
-        for c in camel_order:
-            final_order.append(c)
+        front_camel_indx = 0
+        for i in range(len(state.board_state),0,-1):
+            if len(state.board_state[i])>0:
+                front_camel_indx = i
+                break
 
-            if self.finalWinner:
-                if self.finalWinner[0] == final_order[len(final_order)-1]:
-                    self.money += self.finalWinner[1]
-                #update correct money
-            if self.finalLoser:
-                if self.finalLoser[0] == final_order[0]:
-                    self.money += self.finalLoser[1]
+        back_camel_indx = 0
+
+        for i in range(1,len(state.board_state)+1):
+            if len(state.board_state[i])>0:
+                back_camel_indx = i
+                break
+
+        if self.finalWinner:
+            if self.finalWinner[0] == state.board_state[front_camel_indx][-1]:
+                self.money += self.finalWinner[1]
+            #update correct money
+        if self.finalLoser:
+            if self.finalLoser[0] == state.board_state[back_camel_indx][0]:
+                self.money += self.finalLoser[1]
         return
 
 
@@ -344,22 +352,22 @@ class MaxPlayer(Player):
             self.bets_made[children[move][1][0]].append(children[move][1][1])
         else:
 
-            take_bet = random.randint(1,10)
-            if take_bet == 1:
+            # take_bet = random.randint(1,10)
+            # if take_bet == 1:
 
-                move = random.randint(0,len(children)-1)
+            move = random.randint(0,len(children)-1)
 
-                if children[move][1] == "roll":
-                    self.money +=1
-                elif children[move][1] == "betWinner":
-                     self.finalWinner = children[move][2]
-                elif children[move][1] == "betLoser":
-                     self.finalLoser = children[move][2]
+            if children[move][1] == "roll":
+                self.money +=1
+            elif children[move][1] == "betWinner":
+                 self.finalWinner = children[move][2]
+            elif children[move][1] == "betLoser":
+                 self.finalLoser = children[move][2]
 
-            else:
-                for child in children:
-                    if child[1] == "roll":
-                        return child[0]
+            # else:
+            #     for child in children:
+            #         if child[1] == "roll":
+            #             return child[0]
 
 
 
@@ -709,44 +717,13 @@ if __name__ == "__main__":
 
     perms = set_perms()
 
-    #simulating 100 games
-    # for i in range(100):
-    #     print(f"simulating game #{i}")
-    #     sim = Simulate()
-    #     board_state, camel_spots = shuffle_start()
-    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
-    #     sim_x, sim_y, res, money = sim.SimulateGame(root,0,perms = perms)
-    #
-    #     x_train.extend(sim_x)
-    #     y_train.extend(sim_y)
-    #     if res == 1:
-    #         outcome[0] +=1
-    #     elif res == 2:
-    #         outcome[1] +=1
-    #     else:
-    #         outcome[2] +=1
-    #
-    # new_network = Network(x_train,y_train)
-    # new_network.compile()
-    # new_network.train_model()
-    # new_network.save_model("new_model0")
-    # #
-    # print(f"Simulating random game: {outcome}, money: {money}")
-    #
-    #
-    x_train = []
-    y_train = []
-
-    print("simulating")
-    outcome = [0,0,0]
-    #
+    simulating 100 games
     for i in range(100):
-
-        print(i)
+        print(f"simulating game #{i}")
         sim = Simulate()
         board_state, camel_spots = shuffle_start()
         root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
-        sim_x, sim_y, res, money = sim.SimulateGame(root,1,network1 ="new_model0",perms = perms)
+        sim_x, sim_y, res, money = sim.SimulateGame(root,0,perms = perms)
 
         x_train.extend(sim_x)
         y_train.extend(sim_y)
@@ -760,9 +737,40 @@ if __name__ == "__main__":
     new_network = Network(x_train,y_train)
     new_network.compile()
     new_network.train_model()
-    new_network.save_model("new_model1")
-
-    print(f"Simulating first weighted game: {outcome}")
+    new_network.save_model("new_model0")
+    #
+    print(f"Simulating random game: {outcome}, money: {money}")
+    #
+    #
+    # x_train = []
+    # y_train = []
+    #
+    # print("simulating")
+    # outcome = [0,0,0]
+    # #
+    # for i in range(100):
+    #
+    #     print(i)
+    #     sim = Simulate()
+    #     board_state, camel_spots = shuffle_start()
+    #     root = GameStateNode(board_state,dice_left,bets_left,camel_spots, winner_bets_left,loser_bets_left)
+    #     sim_x, sim_y, res, money = sim.SimulateGame(root,1,network1 ="new_model0",perms = perms)
+    #
+    #     x_train.extend(sim_x)
+    #     y_train.extend(sim_y)
+    #     if res == 1:
+    #         outcome[0] +=1
+    #     elif res == 2:
+    #         outcome[1] +=1
+    #     else:
+    #         outcome[2] +=1
+    #
+    # new_network = Network(x_train,y_train)
+    # new_network.compile()
+    # new_network.train_model()
+    # new_network.save_model("new_model1")
+    #
+    # print(f"Simulating first weighted game: {outcome}")
 
     # x_train = []
     # y_train = []
