@@ -352,22 +352,22 @@ class MaxPlayer(Player):
             self.bets_made[children[move][1][0]].append(children[move][1][1])
         else:
 
-            # take_bet = random.randint(1,10)
-            # if take_bet == 1:
+            take_bet = random.randint(1,10)
+            if take_bet == 1:
 
             move = random.randint(0,len(children)-1)
 
-            if children[move][1] == "roll":
-                self.money +=1
-            elif children[move][1] == "betWinner":
-                 self.finalWinner = children[move][2]
-            elif children[move][1] == "betLoser":
-                 self.finalLoser = children[move][2]
+                if children[move][1] == "roll":
+                    self.money +=1
+                elif children[move][1] == "betWinner":
+                     self.finalWinner = children[move][2]
+                elif children[move][1] == "betLoser":
+                     self.finalLoser = children[move][2]
 
-            # else:
-            #     for child in children:
-            #         if child[1] == "roll":
-            #             return child[0]
+            else:
+                for child in children:
+                    if child[1] == "roll":
+                        return child[0]
 
 
 
@@ -709,15 +709,15 @@ if __name__ == "__main__":
 
 
 
-    # x_train = []
-    # y_train = []
-    #
-    # print("simulating")
-    # outcome = [0,0,0] #wins, losses, ties
+    x_train = []
+    y_train = []
+
+    print("simulating")
+    outcome = [0,0,0] #wins, losses, ties
 
     perms = set_perms()
 
-    simulating 100 games
+    #simulating 100 games
     for i in range(100):
         print(f"simulating game #{i}")
         sim = Simulate()
