@@ -33,7 +33,7 @@ p1_turn = True
 
 p1 = Player()
 perms = set_perms()
-p2 = MaxPlayer(perms)
+p2 = SmartPlayer("./new_model0",perms)
 # p2 = MaxPlayer(perms)
 
 players = [p1,p2]

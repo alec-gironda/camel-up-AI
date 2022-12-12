@@ -355,7 +355,7 @@ class MaxPlayer(Player):
             take_bet = random.randint(1,10)
             if take_bet == 1:
 
-            move = random.randint(0,len(children)-1)
+                move = random.randint(0,len(children)-1)
 
                 if children[move][1] == "roll":
                     self.money +=1
@@ -717,7 +717,7 @@ if __name__ == "__main__":
 
     perms = set_perms()
 
-    #simulating 100 games
+    simulating 100 games
     for i in range(100):
         print(f"simulating game #{i}")
         sim = Simulate()
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     new_network.train_model()
     new_network.save_model("new_model0")
     #
-    print(f"Simulating random game: {outcome}, money: {money}")
+    print(f"Simulating game: {outcome}, money: {money}")
     #
     #
     # x_train = []
