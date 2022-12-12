@@ -717,7 +717,7 @@ if __name__ == "__main__":
 
     perms = set_perms()
 
-    simulating 100 games
+    # simulating 100 games
     for i in range(100):
         print(f"simulating game #{i}")
         sim = Simulate()
