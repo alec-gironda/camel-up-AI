@@ -4,6 +4,8 @@ import time
 import pygame
 import copy as cp
 
+#initialize board conditions and screen
+
 board_state, camel_spots = shuffle_start()
 bets_left = {1:[2,3,5],2:[2,3,5],3:[2,3,5],4:[2,3,5],5:[2,3,5]}
 winner_bets_left = [8,5,3,2,1]
@@ -386,7 +388,7 @@ def draw_board(screen,screen_width,screen_height,display_red_die,display_blue_di
 
 
 
-
+# GAME LOOP
 while True:
 
     draw_board(screen,screen_width,screen_height,display_red_die,display_blue_die,
