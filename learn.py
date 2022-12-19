@@ -318,6 +318,8 @@ class MaxPlayer(Player):
 
         EVs = [probs[i-1] * state.bets_left[i][-1] if i in state.bets_left else 0 for i in range(1,6)]
 
+        print(EVs)
+
         return np.argsort(EVs),sorted(EVs)
 
     def make_move(self,gamestate):
